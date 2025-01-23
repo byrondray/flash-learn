@@ -11,14 +11,17 @@
     "generate": "bunx drizzle-kit generate"
   },
   "dependencies": {
+    "@langchain/openai": "^0.3.17",
     "@radix-ui/react-dialog": "^1.1.5",
     "@radix-ui/react-separator": "^1.1.1",
     "@radix-ui/react-slot": "^1.1.1",
     "@radix-ui/react-tooltip": "^1.1.7",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "langchain": "^0.3.12",
     "lucide-react": "^0.473.0",
     "next": "15.1.4",
+    "openai": "^4.80.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tailwind-merge": "^2.6.0",
