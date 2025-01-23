@@ -8,6 +8,13 @@
       "when": 1737430728297,
       "tag": "0000_loud_red_ghost",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1737602841928,
+      "tag": "0001_harsh_kronos",
+      "breakpoints": true
     }
   ]
 }
