@@ -11,8 +11,10 @@
     "generate": "bunx drizzle-kit generate"
   },
   "dependencies": {
+    "@kinde-oss/kinde-auth-nextjs": "^2.4.6",
     "@langchain/openai": "^0.3.17",
     "@radix-ui/react-dialog": "^1.1.5",
+    "@radix-ui/react-scroll-area": "^1.2.2",
     "@radix-ui/react-separator": "^1.1.1",
     "@radix-ui/react-slot": "^1.1.1",
     "@radix-ui/react-tooltip": "^1.1.7",
