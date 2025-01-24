@@ -1,7 +1,7 @@
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Clock, BookOpen, Brain } from "lucide-react";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -12,7 +12,9 @@ export default function Home() {
           <h1 className="text-3xl font-bold">Welcome back!</h1>
           <p className="text-muted-foreground">Track your study progress</p>
         </div>
-        <Button>Create New Note</Button>
+        <Link href="/notes/newNote">
+          <Button>Create New Note</Button>
+        </Link>
       </div>
 
       {/* Stats Grid */}

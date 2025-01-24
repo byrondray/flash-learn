@@ -1,6 +1,5 @@
 import { getDB } from "@/database/client";
 import { notes } from "@/database/schema/notes";
-import { users } from "@/database/schema/users";
 import { eq } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 
