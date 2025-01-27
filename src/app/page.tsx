@@ -1,12 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { checkAndStoreKindeUser } from "@/utils/checkAndStoreKindeUser";
 import { BarChart, Clock, BookOpen, Brain } from "lucide-react";
 import Link from "next/link";
 
-export default function Home() {
+export default async function Home() {
+  await checkAndStoreKindeUser();
   return (
     <div className="space-y-8">
-      {/* Welcome Section */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Welcome back!</h1>
@@ -17,7 +18,6 @@ export default function Home() {
         </Link>
       </div>
 
-      {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -61,7 +61,6 @@ export default function Home() {
         </Card>
       </div>
 
-      {/* Recent Notes */}
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">Recent Notes</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

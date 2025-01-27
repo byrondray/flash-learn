@@ -5,5 +5,12 @@ export default function middleware(req: Request) {
 }
 
 export const config = {
-  matcher: ["/dashboard", "/users"],
+  matcher: [
+    "/",
+    "/notes/newNote",
+    "/notes/[id]",
+    "/flashCards/create/[id]",
+    "/quizQuestions/create/[id]",
+    "/quizQuestions/[id]",
+  ],
 };

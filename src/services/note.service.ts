@@ -10,6 +10,7 @@ export async function createNote(
   title: string,
   content: string
 ) {
+  console.log("createNote");
   return await db
     .insert(notes)
     .values({ id: uuid(), userId, title, content })
@@ -21,6 +22,7 @@ export async function updateNote(
   title: string,
   content: string
 ) {
+  console.log("updateNote");
   const lastUpdated = new Date().toISOString();
   return await db
     .update(notes)
@@ -35,4 +37,10 @@ export async function deleteNote(noteId: string) {
 
 export async function getNotesForUser(userId: string) {
   return await db.select({ notes }).from(notes).where(eq(notes.userId, userId));
+}
+
+export async function getNoteById(noteId: string) {
+  const r = await db.select({ notes }).from(notes).where(eq(notes.id, noteId));
+  console.log("getNoteById", r);
+  return r[0];
 }

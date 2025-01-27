@@ -17,9 +17,13 @@ export const checkAndStoreKindeUser = async () => {
 
     let storedUser = await db.select().from(users).where(eq(users.id, user.id));
 
-    if (!storedUser) {
+    if (!storedUser || storedUser.length === 0) {
       if (user.id && user.email) {
-        await db.insert(users).values({ id: user.id, email: user.email });
+        const r = await db
+          .insert(users)
+          .values({ id: user.id, email: user.email })
+          .returning();
+        return r;
       }
     }
   } catch (error) {
