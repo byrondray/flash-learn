@@ -1,11 +1,20 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getThreeMostRecentNotesForUser } from "@/services/note.service";
 import { checkAndStoreKindeUser } from "@/utils/checkAndStoreKindeUser";
+import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { BarChart, Clock, BookOpen, Brain } from "lucide-react";
 import Link from "next/link";
 
 export default async function Home() {
+  const { getUser } = getKindeServerSession();
+
+  const user = await getUser();
+
   await checkAndStoreKindeUser();
+
+  const threeMostRecentNotes = await getThreeMostRecentNotesForUser(user!.id);
+
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center">
@@ -64,13 +73,18 @@ export default async function Home() {
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">Recent Notes</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <Card key={i} className="cursor-pointer hover:bg-accent/50">
+          {threeMostRecentNotes.map((i) => (
+            <Card
+              key={i.notes.id}
+              className="cursor-pointer hover:bg-accent/50"
+            >
               <CardHeader>
-                <CardTitle className="text-base">Note Title {i}</CardTitle>
+                <CardTitle className="text-base">
+                  Note Title {i.notes.title}
+                </CardTitle>
               </CardHeader>
               <CardContent className="text-sm text-muted-foreground">
-                Last edited 2 hours ago
+                {`Last edited ${i.notes.lastUpdated}`}
               </CardContent>
             </Card>
           ))}

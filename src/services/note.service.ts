@@ -44,3 +44,19 @@ export async function getNoteById(noteId: string) {
   console.log("getNoteById", r);
   return r[0];
 }
+
+export async function getThreeMostRecentNotesForUser(userId: string) {
+  const r = await db
+    .select({ notes })
+    .from(notes)
+    .where(eq(notes.userId, userId))
+    // .orderBy(sql`CAST(${notes.lastUpdated} AS TIMESTAMP)`, sql`desc`) // this doesnt work
+    .limit(3);
+
+  return r.sort((a, b) => {
+    return (
+      new Date(b.notes.lastUpdated ?? 0).getTime() -
+      new Date(a.notes.lastUpdated ?? 0).getTime()
+    );
+  });
+}
