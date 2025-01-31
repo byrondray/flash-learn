@@ -65,13 +65,19 @@ export const getTestScoresForUser = async (userId: string) => {
 };
 
 export const getMostRecentTestScoreForUser = async (userId: string) => {
-  return await db
+  const scores = await db
     .select({ testScores })
     .from(testScores)
     .innerJoin(quizQuestions, eq(testScores.quizQuestionId, quizQuestions.id))
     .innerJoin(notes, eq(quizQuestions.noteId, notes.id))
     .innerJoin(users, eq(notes.userId, users.id))
-    .where(eq(users.id, userId))
-    .orderBy(sql`CAST(${testScores.dateAttempted} AS TIMESTAMP)`, sql`desc`)
-    .limit(1);
+    .where(eq(users.id, userId));
+
+  const sortedScores = scores.sort((a, b) => {
+    const dateA = new Date(a.testScores.dateAttempted);
+    const dateB = new Date(b.testScores.dateAttempted);
+    return dateB.getTime() - dateA.getTime();
+  });
+
+  return sortedScores.length > 0 ? [sortedScores[0]] : [];
 };

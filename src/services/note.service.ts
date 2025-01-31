@@ -1,6 +1,6 @@
 import { getDB } from "@/database/client";
 import { notes } from "@/database/schema/notes";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 
 const db = getDB();
@@ -60,3 +60,22 @@ export async function getThreeMostRecentNotesForUser(userId: string) {
     );
   });
 }
+
+export const getNotesForUserEditedThisWeek = async (userId: string) => {
+  const allNotes = await db
+    .select({ notes })
+    .from(notes)
+    .where(eq(notes.userId, userId));
+
+  const oneWeekAgo = new Date();
+  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+  const recentNotes = allNotes.filter((note) => {
+    const editDate = note.notes.lastUpdated
+      ? new Date(note.notes.lastUpdated)
+      : new Date(0);
+    return editDate >= oneWeekAgo;
+  });
+
+  return recentNotes;
+};

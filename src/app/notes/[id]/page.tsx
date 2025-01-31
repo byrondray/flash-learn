@@ -18,7 +18,7 @@ export default function NotePage() {
   const [noteId, setNoteId] = useState<string | null>(
     id ? (Array.isArray(id) ? id[0] : id) : null
   );
-  const [isLoading, setIsLoading] = useState(!!noteId); // Only set loading if we have a noteId
+  const [isLoading, setIsLoading] = useState(!!noteId);
   const [shouldSave, setShouldSave] = useState(false);
 
   console.log("Current noteId:", noteId);
@@ -26,7 +26,6 @@ export default function NotePage() {
   const [debouncedTitle] = useDebounce(title, 2000);
   const [debouncedContent] = useDebounce(content, 2000);
 
-  // Only fetch if we have a noteId
   useEffect(() => {
     async function loadNote() {
       if (noteId) {
@@ -61,11 +60,9 @@ export default function NotePage() {
 
     try {
       if (noteId) {
-        // Update existing note
         console.log("Updating existing note");
         await updateExistingNote(noteId, title, content);
       } else {
-        // Create new note
         console.log("Creating new note");
         const [newNote] = await saveNote(user.id, title, content);
         console.log("New note created:", newNote);

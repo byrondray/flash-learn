@@ -39,3 +39,11 @@ export async function getFlashCardsForNoteId(noteId: string) {
     .from(flashCards)
     .where(eq(flashCards.noteId, noteId));
 }
+
+export async function getFlashCardsForUser(userId: string) {
+  return await db
+    .select({ flashCards })
+    .from(flashCards)
+    .innerJoin(notes, eq(flashCards.noteId, notes.id))
+    .where(eq(notes.userId, userId));
+}
