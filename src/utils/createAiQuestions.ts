@@ -68,17 +68,52 @@ export async function generateQuizQuestions(
   return result.questions;
 }
 
+interface GeneratedQuestion {
+  question: string;
+  options: string[];
+  correctAnswer: string;
+  explanation: string;
+}
+
 export async function generateUniqueQuestions(
   title: string,
   content: string,
   existingQuestions: QuizQuestions[]
-): Promise<QuizQuestions[]> {
+): Promise<GeneratedQuestion[]> {
   const existingQuestionsText = existingQuestions
     .map((q) => q.question)
     .join("\n");
 
   const parser = new JsonOutputParser();
-  const prompt = PromptTemplate.fromTemplate(uniqueQuestionsTemplate);
+  const prompt =
+    PromptTemplate.fromTemplate(`Create 5 new multiple choice quiz questions about "{title}" that are different from these existing questions:
+
+Existing questions:
+{existingQuestions}
+
+Content to base new questions on:
+{content}
+
+Return a JSON object with a 'questions' array. Each question should have:
+- question: string (the question text)
+- options: string[] (array of 4 possible answers)
+- correctAnswer: string (the correct answer, must be one of the options)
+- explanation: string (brief explanation of why the answer is correct)
+
+Example format:
+{
+  "questions": [
+    {
+      "question": "What is the capital of France?",
+      "options": ["London", "Berlin", "Paris", "Madrid"],
+      "correctAnswer": "Paris",
+      "explanation": "Paris has been the capital of France since 508 CE."
+    }
+  ]
+}
+
+Make questions challenging but fair, and ensure they're different from the existing ones.`);
+
   const chain = prompt.pipe(llm).pipe(parser);
 
   const result = await chain.invoke({
@@ -86,6 +121,7 @@ export async function generateUniqueQuestions(
     content,
     existingQuestions: existingQuestionsText,
   });
+
   return result.questions;
 }
 

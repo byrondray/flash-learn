@@ -1,32 +1,66 @@
 import { getDB } from "@/database/client";
-import { notes } from "@/database/schema/notes";
-import { quizQuestions, QuizQuestions } from "@/database/schema/quizQuestions";
+import { quizQuestions } from "@/database/schema/quizQuestions";
+import { questionOptions } from "@/database/schema/quizQuestionOptions";
 import { v4 as uuid } from "uuid";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 
 const db = getDB();
 
 export async function createQuizQuestion(
   noteId: string,
   question: string,
-  answer: string
+  options: string[],
+  correctAnswer: string,
+  explanation: string
 ) {
-  return await db
+  const [createdQuestion] = await db
     .insert(quizQuestions)
-    .values({ id: uuid(), noteId, question, answer })
+    .values({
+      id: uuid(),
+      noteId,
+      question,
+      correctAnswer,
+      explanation,
+    })
     .returning();
+
+  const optionsToInsert = options.map((optionText) => ({
+    id: uuid(),
+    questionId: createdQuestion.id,
+    optionText,
+  }));
+
+  await db.insert(questionOptions).values(optionsToInsert);
+
+  return createdQuestion;
 }
 
 export async function updateQuizQuestion(
   quizQuestionId: string,
   question: string,
-  answer: string
+  options: string[],
+  correctAnswer: string,
+  explanation: string
 ) {
-  return await db
+  const [updatedQuestion] = await db
     .update(quizQuestions)
-    .set({ question, answer })
+    .set({ question, correctAnswer, explanation })
     .where(eq(quizQuestions.id, quizQuestionId))
     .returning();
+
+  await db
+    .delete(questionOptions)
+    .where(eq(questionOptions.questionId, quizQuestionId));
+
+  const optionsToInsert = options.map((optionText) => ({
+    id: uuid(),
+    questionId: quizQuestionId,
+    optionText,
+  }));
+
+  await db.insert(questionOptions).values(optionsToInsert);
+
+  return updatedQuestion;
 }
 
 export async function deleteQuizQuestion(quizQuestionId: string) {
@@ -36,8 +70,19 @@ export async function deleteQuizQuestion(quizQuestionId: string) {
 }
 
 export async function getQuizQuestionsForNoteId(noteId: string) {
-  return await db
-    .select({ quizQuestions })
+  const questions = await db
+    .select()
     .from(quizQuestions)
     .where(eq(quizQuestions.noteId, noteId));
+
+  const questionIds = questions.map((q) => q.id);
+  const options = await db
+    .select()
+    .from(questionOptions)
+    .where(inArray(questionOptions.questionId, questionIds));
+
+  return questions.map((question) => ({
+    ...question,
+    options: options.filter((opt) => opt.questionId === question.id),
+  }));
 }

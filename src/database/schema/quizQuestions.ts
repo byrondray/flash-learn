@@ -7,7 +7,8 @@ export const quizQuestions = sqliteTable("quizQuestions", {
     .notNull()
     .references(() => notes.id, { onDelete: "cascade" }),
   question: text("question").notNull(),
-  answer: text("answer").notNull(),
+  correctAnswer: text("correctAnswer").notNull(),
+  explanation: text("explanation").notNull(),
 });
 
 export type QuizQuestions = typeof quizQuestions.$inferSelect;
