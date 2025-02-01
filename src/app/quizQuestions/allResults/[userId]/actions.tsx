@@ -8,7 +8,6 @@ interface ProcessedTestScore {
     id: string;
     score: string;
     dateAttempted: string;
-    quizQuestionId: string | null;
   };
   notes: {
     id: string;
@@ -23,16 +22,14 @@ export async function fetchUserTestScores(userId: string) {
 
   for (const score of scores) {
     try {
-      const note = score.testScores.quizQuestionId
-        ? await getNoteById(score.testScores.quizQuestionId)
-        : null;
+      const note = await getNoteById(score.notes.id);
+
       if (note) {
         processedScores.push({
           testScores: {
             id: score.testScores.id,
             score: score.testScores.score,
             dateAttempted: score.testScores.dateAttempted,
-            quizQuestionId: score.testScores.quizQuestionId,
           },
           notes: {
             id: note.notes.id,

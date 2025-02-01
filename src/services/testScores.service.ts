@@ -56,7 +56,7 @@ export const getTestScoresForDate = async (date: string) => {
 
 export const getTestScoresForUser = async (userId: string) => {
   return await db
-    .select({ testScores })
+    .select({ testScores, notes })
     .from(testScores)
     .innerJoin(quizQuestions, eq(testScores.quizQuestionId, quizQuestions.id))
     .innerJoin(notes, eq(quizQuestions.noteId, notes.id))

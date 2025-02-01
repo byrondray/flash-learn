@@ -55,56 +55,65 @@ export default async function Home() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Notes</CardTitle>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalNotes}</div>
-            <p className="text-xs text-muted-foreground">
-              +{totalNotesEditedThisWeek} this week
-            </p>
-          </CardContent>
-        </Card>
+        <Link href={`/notes/viewAll/${user.id}`}>
+          <Card className="cursor-pointer hover:bg-accent/50">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Total Notes</CardTitle>
+              <BookOpen className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{totalNotes}</div>
+              <p className="text-xs text-muted-foreground">
+                +{totalNotesEditedThisWeek} this week
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href={`/flashCards/viewAll/${user.id}`}>
+          <Card className="cursor-pointer hover:bg-accent/50">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Flashcards</CardTitle>
+              <Brain className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{totalFlashCards}</div>
+              <p className="text-xs text-muted-foreground">
+                {totalFlashCards === 0
+                  ? "No flashcards yet"
+                  : "Across all notes"}
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Flashcards</CardTitle>
-            <Brain className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalFlashCards}</div>
-            <p className="text-xs text-muted-foreground">
-              {totalFlashCards === 0 ? "No flashcards yet" : "Across all notes"}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Quiz Score</CardTitle>
-            <BarChart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {mostRecentTestScore.length > 0 ? (
-              <>
-                <div className="text-2xl font-bold">{scorePercentage}%</div>
-                <p className="text-xs text-muted-foreground">
-                  Last attempt{" "}
-                  {formatTimeAgo(
-                    mostRecentTestScore[0].testScores.dateAttempted
-                  )}
-                </p>
-              </>
-            ) : (
-              <>
-                <div className="text-2xl font-bold">-</div>
-                <p className="text-xs text-muted-foreground">No attempts yet</p>
-              </>
-            )}
-          </CardContent>
-        </Card>
+        <Link href={`quizQuestions/allResults/${user.id}`}>
+          <Card className="cursor-pointer hover:bg-accent/50">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Quiz Score</CardTitle>
+              <BarChart className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              {mostRecentTestScore.length > 0 ? (
+                <>
+                  <div className="text-2xl font-bold">{scorePercentage}%</div>
+                  <p className="text-xs text-muted-foreground">
+                    Last attempt{" "}
+                    {formatTimeAgo(
+                      mostRecentTestScore[0].testScores.dateAttempted
+                    )}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold">-</div>
+                  <p className="text-xs text-muted-foreground">
+                    No attempts yet
+                  </p>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       <div className="space-y-4">
