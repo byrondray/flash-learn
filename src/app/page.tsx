@@ -11,25 +11,35 @@ import { getFlashCardsForUser } from "@/services/cards.service";
 import { getNotesForUser } from "@/services/note.service";
 import { getNotesForUserEditedThisWeek } from "@/services/note.service";
 
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   const { getUser } = getKindeServerSession();
   const user = await getUser();
+
+  if (!user || !user.id) {
+    return <p className="text-center text-red-500">Error: User not found</p>;
+  }
+
   await checkAndStoreKindeUser();
 
-  const threeMostRecentNotes = await getThreeMostRecentNotesForUser(user!.id);
-  const mostRecentTestScore = await getMostRecentTestScoreForUser(user!.id);
+  const threeMostRecentNotes =
+    (await getThreeMostRecentNotesForUser(user.id)) || [];
+  const mostRecentTestScore =
+    (await getMostRecentTestScoreForUser(user.id)) || [];
 
   const scorePercentage = mostRecentTestScore[0]
     ? Math.round(Number(mostRecentTestScore[0].testScores.score) * 100)
     : null;
 
-  const flashCards = await getFlashCardsForUser(user!.id);
+  const flashCards = (await getFlashCardsForUser(user.id)) || [];
   const totalFlashCards = flashCards.length;
 
-  const notes = await getNotesForUser(user!.id);
+  const notes = (await getNotesForUser(user.id)) || [];
   const totalNotes = notes.length;
 
-  const notesEditedThisWeek = await getNotesForUserEditedThisWeek(user!.id);
+  const notesEditedThisWeek =
+    (await getNotesForUserEditedThisWeek(user.id)) || [];
   const totalNotesEditedThisWeek = notesEditedThisWeek.length;
 
   return (
@@ -57,6 +67,7 @@ export default async function Home() {
             </p>
           </CardContent>
         </Card>
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Flashcards</CardTitle>
@@ -69,23 +80,14 @@ export default async function Home() {
             </p>
           </CardContent>
         </Card>
-        {/* <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Study Time</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">5.2h</div>
-            <p className="text-xs text-muted-foreground">This week</p>
-          </CardContent>
-        </Card> */}
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Quiz Score</CardTitle>
             <BarChart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            {mostRecentTestScore && mostRecentTestScore.length > 0 ? (
+            {mostRecentTestScore.length > 0 ? (
               <>
                 <div className="text-2xl font-bold">{scorePercentage}%</div>
                 <p className="text-xs text-muted-foreground">
@@ -110,13 +112,10 @@ export default async function Home() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {threeMostRecentNotes.map((i) => (
             <Link href={`/notes/${i.notes.id}`} key={i.notes.id}>
-              <Card
-                key={i.notes.id}
-                className="cursor-pointer hover:bg-accent/50"
-              >
+              <Card className="cursor-pointer hover:bg-accent/50">
                 <CardHeader>
                   <CardTitle className="text-base">
-                    Note Title {i.notes.title}
+                    Note Title: {i.notes.title}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="text-sm text-muted-foreground">
