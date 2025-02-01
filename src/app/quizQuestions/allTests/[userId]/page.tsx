@@ -95,7 +95,9 @@ export default function AvailableQuizzesPage() {
               <Card
                 key={quiz.note.id}
                 className="hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={() => router.push(`/test/${quiz.note.id}`)}
+                onClick={() =>
+                  router.push(`/quizQuestions/test/${quiz.note.id}`)
+                }
               >
                 <CardHeader>
                   <CardTitle className="line-clamp-1">

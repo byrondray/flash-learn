@@ -29,7 +29,7 @@ export default async function Home() {
     (await getMostRecentTestScoreForUser(user.id)) || [];
 
   const scorePercentage = mostRecentTestScore[0]
-    ? Math.round(Number(mostRecentTestScore[0].testScores.score) * 100)
+    ? Math.round(Number(mostRecentTestScore[0].testScores.score))
     : null;
 
   const flashCards = (await getFlashCardsForUser(user.id)) || [];

@@ -43,7 +43,7 @@ export default function CreateQuiz() {
     setSaving(true);
     try {
       await saveQuizQuestions(id, questions);
-      router.push(`/test/${id}`);
+      router.push(`/quizQuestions/test/${id}`);
     } catch (error) {
       console.error("Error saving questions:", error);
     } finally {
