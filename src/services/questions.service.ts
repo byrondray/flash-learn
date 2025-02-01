@@ -3,6 +3,7 @@ import { quizQuestions } from "@/database/schema/quizQuestions";
 import { questionOptions } from "@/database/schema/quizQuestionOptions";
 import { v4 as uuid } from "uuid";
 import { eq, inArray } from "drizzle-orm";
+import { notes } from "@/database/schema/notes";
 
 const db = getDB();
 
@@ -84,5 +85,26 @@ export async function getQuizQuestionsForNoteId(noteId: string) {
   return questions.map((question) => ({
     ...question,
     options: options.filter((opt) => opt.questionId === question.id),
+  }));
+}
+
+export async function getQuizQuestionsAndOptionsForUser(userId: string) {
+  const questions = await db
+    .select()
+    .from(quizQuestions)
+    .innerJoin(notes, eq(quizQuestions.noteId, notes.id))
+    .where(eq(notes.userId, userId));
+
+  const questionIds = questions.map((q) => q.quizQuestions.id);
+  const options = await db
+    .select()
+    .from(questionOptions)
+    .where(inArray(questionOptions.questionId, questionIds));
+
+  return questions.map((question) => ({
+    ...question,
+    options: options.filter(
+      (opt) => opt.questionId === question.quizQuestions.id
+    ),
   }));
 }
