@@ -125,7 +125,7 @@ export default function NotePage() {
         <Button
           variant="outline"
           className="cursor-pointer"
-          onClick={() => router.push(`/quiz/create/${noteId}`)}
+          onClick={() => router.push(`/quizQuestions/create/${noteId}`)}
           disabled={!noteId}
         >
           Create Quiz

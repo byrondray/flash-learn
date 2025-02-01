@@ -1,5 +1,5 @@
 "use client";
-// app/flashCards/create/[id]/page.tsx
+
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -25,18 +25,18 @@ export default function CreateFlashCardsPage() {
     const generateCards = async () => {
       try {
         const noteId = Array.isArray(id) ? id[0] : id;
-
         if (!noteId) {
           router.push("/");
+          return;
         }
 
-        if (noteId) {
-          const generatedCards = await generateFlashcardsAction(noteId);
-          setGeneratedCards(generatedCards);
-        } else {
-          throw new Error("Note ID is undefined");
-        }
-        setFlashcards(generatedCards);
+        const generatedCards = await generateFlashcardsAction(noteId);
+        const formattedCards = generatedCards.map((card) => ({
+          question: card.front,
+          answer: card.back,
+        }));
+
+        setFlashcards(formattedCards);
       } catch (error) {
         console.error("Error generating flashcards:", error);
       } finally {
@@ -46,7 +46,6 @@ export default function CreateFlashCardsPage() {
 
     generateCards();
   }, [id]);
-
   const handleSave = async () => {
     setIsSaving(true);
     try {
@@ -56,7 +55,7 @@ export default function CreateFlashCardsPage() {
       } else {
         throw new Error("Note ID is undefined");
       }
-      router.push("/notes/view" + noteId);
+      router.push("/flashCards/view/" + noteId);
     } catch (error) {
       console.error("Error saving flashcards:", error);
     } finally {

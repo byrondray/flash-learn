@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Home, BookOpen } from "lucide-react";
+import { Menu, Home, BookOpen, Brain, FileText } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
 
@@ -13,7 +13,6 @@ interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
 export function Sidebar({ className }: SidebarProps) {
   return (
     <>
-      {/* Mobile Sidebar */}
       <Sheet>
         <SheetTrigger asChild>
           <Button
@@ -29,7 +28,6 @@ export function Sidebar({ className }: SidebarProps) {
         </SheetContent>
       </Sheet>
 
-      {/* Desktop Sidebar */}
       <aside
         className={cn(
           "hidden md:block w-[240px] border-r bg-background",
@@ -67,12 +65,34 @@ function SidebarContent() {
             variant="ghost"
             className={cn(
               "w-full justify-start",
+              pathname.includes("/notes/viewAll") && "bg-secondary"
+            )}
+            onClick={() => router.push(`/notes/viewAll/${user?.id}`)}
+          >
+            <FileText className="mr-2 h-4 w-4" />
+            Notes
+          </Button>
+          <Button
+            variant="ghost"
+            className={cn(
+              "w-full justify-start",
               pathname.includes("/quizQuestions/allTests") && "bg-secondary"
             )}
-            onClick={() => router.push(`/quizQuestions/allTest/${user?.id}`)}
+            onClick={() => router.push(`/quizQuestions/allTests/${user?.id}`)}
           >
             <BookOpen className="mr-2 h-4 w-4" />
             Quiz Questions
+          </Button>
+          <Button
+            variant="ghost"
+            className={cn(
+              "w-full justify-start",
+              pathname.includes("/flashCards/viewAll") && "bg-secondary"
+            )}
+            onClick={() => router.push(`/flashCards/viewAll/${user?.id}`)}
+          >
+            <Brain className="mr-2 h-4 w-4" />
+            Flashcards
           </Button>
         </div>
       </div>

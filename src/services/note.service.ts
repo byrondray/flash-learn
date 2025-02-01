@@ -50,7 +50,6 @@ export async function getThreeMostRecentNotesForUser(userId: string) {
     .select({ notes })
     .from(notes)
     .where(eq(notes.userId, userId))
-    // .orderBy(sql`CAST(${notes.lastUpdated} AS TIMESTAMP)`, sql`desc`) // this doesnt work
     .limit(3);
 
   return r.sort((a, b) => {

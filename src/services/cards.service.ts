@@ -42,7 +42,7 @@ export async function getFlashCardsForNoteId(noteId: string) {
 
 export async function getFlashCardsForUser(userId: string) {
   return await db
-    .select({ flashCards })
+    .select({ flashCards, notes })
     .from(flashCards)
     .innerJoin(notes, eq(flashCards.noteId, notes.id))
     .where(eq(notes.userId, userId));
