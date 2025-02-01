@@ -3,7 +3,7 @@ import { notes } from "@/database/schema/notes";
 import { testScores } from "@/database/schema/testScores";
 import { users } from "@/database/schema/users";
 import { v4 as uuid } from "uuid";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { quizQuestions } from "@/database/schema/quizQuestions";
 
 const db = getDB();

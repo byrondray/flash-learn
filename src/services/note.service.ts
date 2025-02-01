@@ -1,6 +1,6 @@
 import { getDB } from "@/database/client";
 import { notes } from "@/database/schema/notes";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 
 const db = getDB();

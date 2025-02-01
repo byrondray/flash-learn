@@ -15,7 +15,10 @@ export const checkAndStoreKindeUser = async () => {
       return;
     }
 
-    let storedUser = await db.select().from(users).where(eq(users.id, user.id));
+    const storedUser = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, user.id));
 
     if (!storedUser || storedUser.length === 0) {
       if (user.id && user.email) {

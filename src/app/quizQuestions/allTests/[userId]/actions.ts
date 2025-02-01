@@ -2,24 +2,46 @@
 
 import { getQuizQuestionsAndOptionsForUser } from "@/services/questions.service";
 
-export async function fetchAvailableQuizzes(userId: string) {
-  const quizData = await getQuizQuestionsAndOptionsForUser(userId);
+interface Note {
+  id: string;
+  title: string;
+  content: string;
+}
 
-  const groupedByNote = quizData.reduce((acc: { [key: string]: any }, curr) => {
-    const noteId = curr.notes.id;
-    if (!acc[noteId]) {
-      acc[noteId] = {
-        note: {
-          id: curr.notes.id,
-          title: curr.notes.title,
-          content: curr.notes.content,
-        },
-        questionCount: 0,
-      };
-    }
-    acc[noteId].questionCount++;
-    return acc;
-  }, {});
+interface QuizData {
+  notes: Note;
+}
+
+interface GroupedNote {
+  note: Note;
+  questionCount: number;
+}
+
+export async function fetchAvailableQuizzes(
+  userId: string
+): Promise<GroupedNote[]> {
+  const quizData: QuizData[] = await getQuizQuestionsAndOptionsForUser(userId);
+
+  const groupedByNote: Record<string, GroupedNote> = quizData.reduce(
+    (acc, curr) => {
+      const noteId = curr.notes.id;
+
+      if (!acc[noteId]) {
+        acc[noteId] = {
+          note: {
+            id: curr.notes.id,
+            title: curr.notes.title,
+            content: curr.notes.content,
+          },
+          questionCount: 0,
+        };
+      }
+
+      acc[noteId].questionCount++;
+      return acc;
+    },
+    {} as Record<string, GroupedNote>
+  );
 
   return Object.values(groupedByNote);
 }

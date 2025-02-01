@@ -1,7 +1,6 @@
 import { ChatOpenAI } from "@langchain/openai";
 import { PromptTemplate } from "@langchain/core/prompts";
 import { JsonOutputParser } from "@langchain/core/output_parsers";
-import { FlashCards } from "@/database/schema/flashCards";
 import { QuizQuestions } from "@/database/schema/quizQuestions";
 
 const chat = new ChatOpenAI({

@@ -128,7 +128,7 @@ export default function TestPage() {
         <Card className="max-w-2xl mx-auto">
           <CardHeader>
             <CardTitle>Quiz Complete!</CardTitle>
-            <CardDescription>Here's how you did:</CardDescription>
+            <CardDescription>Here&apos;s how you did:</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="text-center">

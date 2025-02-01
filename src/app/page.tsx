@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getThreeMostRecentNotesForUser } from "@/services/note.service";
 import { checkAndStoreKindeUser } from "@/utils/checkAndStoreKindeUser";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
-import { BarChart, Clock, BookOpen, Brain } from "lucide-react";
+import { BarChart, BookOpen, Brain } from "lucide-react";
 import Link from "next/link";
 import { formatTimeAgo } from "@/utils/formatTime";
 import { getMostRecentTestScoreForUser } from "@/services/testScores.service";

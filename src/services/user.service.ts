@@ -15,4 +15,3 @@ export async function getUser(id: string) {
 export async function getUserByEmail(email: string) {
   return await db.select({ users }).from(users).where(eq(users.email, email));
 }
-

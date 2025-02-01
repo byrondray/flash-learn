@@ -19,7 +19,6 @@ export default function CreateFlashCardsPage() {
   const [isGenerating, setIsGenerating] = useState(true);
   const [flashcards, setFlashcards] = useState<FlashCard[]>([]);
   const [isSaving, setIsSaving] = useState(false);
-  const [generatedCards, setGeneratedCards] = useState<FlashCard[]>([]);
 
   useEffect(() => {
     const generateCards = async () => {

@@ -1,6 +1,6 @@
 import { getDB } from "@/database/client";
 import { notes } from "@/database/schema/notes";
-import { flashCards, FlashCards } from "@/database/schema/flashCards";
+import { flashCards } from "@/database/schema/flashCards";
 import { v4 as uuid } from "uuid";
 import { eq } from "drizzle-orm";
 
@@ -47,3 +47,7 @@ export async function getFlashCardsForUser(userId: string) {
     .innerJoin(notes, eq(flashCards.noteId, notes.id))
     .where(eq(notes.userId, userId));
 }
+
+export type FlashCardsForUser = Awaited<
+  ReturnType<typeof getFlashCardsForUser>
+>;
