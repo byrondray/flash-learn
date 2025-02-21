@@ -8,8 +8,8 @@ const chat = new ChatOpenAI({
   modelName: "gpt-4-turbo-preview",
   temperature: 0.7,
   openAIApiKey: process.env.OPENAI_API_KEY,
-  timeout: 15000, 
-  maxRetries: 2,
+  timeout: 10000,
+  maxRetries: 3,
   streaming: false,
 });
 
@@ -19,7 +19,7 @@ function sanitizeContent(content: string): string {
 
 function splitContentIntoChunks(
   content: string,
-  maxChunkSize: number = 800 
+  maxChunkSize: number = 400
 ): string[] {
   const sentences = content.split(/(?<=[.!?])\s+/);
   const chunks: string[] = [];
@@ -53,16 +53,29 @@ interface GeneratedQuestion {
   explanation: string;
 }
 
-async function processChunkWithTimeout<T>(
-  processor: () => Promise<T>,
-  timeoutMs: number = 12000 
-): Promise<T> {
-  return Promise.race([
-    processor(),
-    new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error("Processing timeout")), timeoutMs)
-    ),
-  ]);
+async function processChunkWithRetry(
+  chunk: string,
+  processor: (chunk: string) => Promise<any>,
+  maxRetries: number = 3
+): Promise<any> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const reducedChunk =
+        attempt === 1 ? chunk : chunk.slice(0, chunk.length / attempt);
+      console.log(`Attempt ${attempt}, chunk length: ${reducedChunk.length}`);
+
+      return await Promise.race([
+        processor(reducedChunk),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Processing timeout")), 8000)
+        ),
+      ]);
+    } catch (error) {
+      console.error(`Attempt ${attempt} failed:`, error);
+      if (attempt === maxRetries) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 200 * attempt));
+    }
+  }
 }
 
 async function createPromptChain(
@@ -96,7 +109,7 @@ export async function generateFlashcards(
         `Processing chunk ${i + 1}/${chunks.length}, length: ${chunk.length}`
       );
 
-      const numCards = Math.min(2, Math.ceil(chunk.length / 500)); 
+      const numCards = Math.min(2, Math.ceil(chunk.length / 400));
       const templateString = `Create {numCards} flashcards from these notes about {title}:
 
 {content}
@@ -107,12 +120,12 @@ Return a JSON object with a 'flashcards' array. Each flashcard should have:
 
 Example format:
 {{
-  "flashcards": [
-    {{
-      "front": "What is a closure in JavaScript?",
-      "back": "A closure is a function that has access to variables in its outer scope, even after the outer function has returned."
-    }}
-  ]
+ "flashcards": [
+   {{
+     "front": "What is a closure in JavaScript?",
+     "back": "A closure is a function that has access to variables in its outer scope, even after the outer function has returned."
+   }}
+ ]
 }}`;
 
       const chain = await createPromptChain(templateString, parser, [
@@ -120,13 +133,15 @@ Example format:
         "content",
         "numCards",
       ]);
-      const result = await processChunkWithTimeout(async () => {
-        return chain.invoke({
+
+      const processor = (chunkContent: string) =>
+        chain.invoke({
           title: sanitizeContent(title),
-          content: sanitizeContent(chunk),
+          content: sanitizeContent(chunkContent),
           numCards,
         });
-      });
+
+      const result = await processChunkWithRetry(chunk, processor);
 
       allFlashcards = [...allFlashcards, ...result.flashcards];
       console.log(
@@ -138,10 +153,10 @@ Example format:
         break;
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 500)); 
+      await new Promise((resolve) => setTimeout(resolve, 300));
     } catch (error) {
-      console.error(`Error processing chunk ${i + 1}:`, error);
-      await new Promise((resolve) => setTimeout(resolve, 200)); 
+      console.error(`Chunk ${i + 1} failed after all retries:`, error);
+      continue;
     }
   }
 
@@ -170,7 +185,7 @@ export async function generateQuizQuestions(
         `Processing chunk ${i + 1}/${chunks.length}, length: ${chunk.length}`
       );
 
-      const numQuestions = Math.min(2, Math.ceil(chunk.length / 500)); 
+      const numQuestions = Math.min(2, Math.ceil(chunk.length / 400));
       const templateString = `Create {numQuestions} multiple choice quiz questions from these notes about {title}:
 
 {content}
@@ -183,14 +198,14 @@ Return a JSON object with a 'questions' array. Each question should have:
 
 Example format:
 {{
-  "questions": [
-    {{
-      "question": "What is the primary purpose of async/await in JavaScript?",
-      "options": ["To handle asynchronous operations with cleaner syntax", "To make code run faster", "To create loops", "To define variables"],
-      "correctAnswer": "To handle asynchronous operations with cleaner syntax",
-      "explanation": "async/await provides a more readable and maintainable way to work with Promises and asynchronous code."
-    }}
-  ]
+ "questions": [
+   {{
+     "question": "What is the primary purpose of async/await in JavaScript?",
+     "options": ["To handle asynchronous operations with cleaner syntax", "To make code run faster", "To create loops", "To define variables"],
+     "correctAnswer": "To handle asynchronous operations with cleaner syntax",
+     "explanation": "async/await provides a more readable and maintainable way to work with Promises and asynchronous code."
+   }}
+ ]
 }}`;
 
       const chain = await createPromptChain(templateString, parser, [
@@ -198,13 +213,15 @@ Example format:
         "content",
         "numQuestions",
       ]);
-      const result = await processChunkWithTimeout(async () => {
-        return chain.invoke({
+
+      const processor = (chunkContent: string) =>
+        chain.invoke({
           title: sanitizeContent(title),
-          content: sanitizeContent(chunk),
+          content: sanitizeContent(chunkContent),
           numQuestions,
         });
-      });
+
+      const result = await processChunkWithRetry(chunk, processor);
 
       allQuestions = [...allQuestions, ...result.questions];
       console.log(
@@ -216,10 +233,10 @@ Example format:
         break;
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 500)); 
+      await new Promise((resolve) => setTimeout(resolve, 300));
     } catch (error) {
-      console.error(`Error processing chunk ${i + 1}:`, error);
-      await new Promise((resolve) => setTimeout(resolve, 200)); 
+      console.error(`Chunk ${i + 1} failed after all retries:`, error);
+      continue;
     }
   }
 
@@ -253,7 +270,7 @@ export async function generateUniqueQuestions(
         `Processing chunk ${i + 1}/${chunks.length}, length: ${chunk.length}`
       );
 
-      const numQuestions = Math.min(2, Math.ceil(chunk.length / 500)); 
+      const numQuestions = Math.min(2, Math.ceil(chunk.length / 400));
       const templateString = `Create {numQuestions} new multiple choice quiz questions about {title} that are different from these existing questions:
 
 Existing questions:
@@ -270,14 +287,14 @@ Return a JSON object with a 'questions' array. Each question should have:
 
 Example format:
 {{
-  "questions": [
-    {{
-      "question": "What is the difference between let and const in JavaScript?",
-      "options": ["let can be reassigned, const cannot", "let is function-scoped, const is block-scoped", "let is only for numbers, const is for strings", "There is no difference"],
-      "correctAnswer": "let can be reassigned, const cannot",
-      "explanation": "While both let and const are block-scoped, variables declared with let can be reassigned but const variables cannot be reassigned after initialization."
-    }}
-  ]
+ "questions": [
+   {{
+     "question": "What is a key feature of the cell membrane?",
+     "options": ["It is completely solid", "It is selectively permeable", "It has no proteins", "It is made of cellulose"],
+     "correctAnswer": "It is selectively permeable",
+     "explanation": "The cell membrane is a selectively permeable barrier that controls what enters and exits the cell."
+   }}
+ ]
 }}`;
 
       const chain = await createPromptChain(templateString, parser, [
@@ -286,14 +303,16 @@ Example format:
         "numQuestions",
         "existingQuestions",
       ]);
-      const result = await processChunkWithTimeout(async () => {
-        return chain.invoke({
+
+      const processor = (chunkContent: string) =>
+        chain.invoke({
           title: sanitizeContent(title),
-          content: sanitizeContent(chunk),
+          content: sanitizeContent(chunkContent),
           existingQuestions: existingQuestionsText,
           numQuestions,
         });
-      });
+
+      const result = await processChunkWithRetry(chunk, processor);
 
       allQuestions = [...allQuestions, ...result.questions];
       console.log(
@@ -305,10 +324,10 @@ Example format:
         break;
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 500)); 
+      await new Promise((resolve) => setTimeout(resolve, 300));
     } catch (error) {
-      console.error(`Error processing chunk ${i + 1}:`, error);
-      await new Promise((resolve) => setTimeout(resolve, 200)); 
+      console.error(`Chunk ${i + 1} failed after all retries:`, error);
+      continue;
     }
   }
 
