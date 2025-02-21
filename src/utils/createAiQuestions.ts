@@ -8,8 +8,8 @@ const chat = new ChatOpenAI({
   modelName: "gpt-4-turbo-preview",
   temperature: 0.7,
   openAIApiKey: process.env.OPENAI_API_KEY,
-  timeout: 30000,
-  maxRetries: 3,
+  timeout: 15000, 
+  maxRetries: 2,
   streaming: false,
 });
 
@@ -19,7 +19,7 @@ function sanitizeContent(content: string): string {
 
 function splitContentIntoChunks(
   content: string,
-  maxChunkSize: number = 1500
+  maxChunkSize: number = 800 
 ): string[] {
   const sentences = content.split(/(?<=[.!?])\s+/);
   const chunks: string[] = [];
@@ -55,7 +55,7 @@ interface GeneratedQuestion {
 
 async function processChunkWithTimeout<T>(
   processor: () => Promise<T>,
-  timeoutMs: number = 25000
+  timeoutMs: number = 12000 
 ): Promise<T> {
   return Promise.race([
     processor(),
@@ -92,9 +92,11 @@ export async function generateFlashcards(
   for (let i = 0; i < chunks.length; i++) {
     const chunk = chunks[i];
     try {
-      console.log(`Processing chunk ${i + 1}/${chunks.length}`);
+      console.log(
+        `Processing chunk ${i + 1}/${chunks.length}, length: ${chunk.length}`
+      );
 
-      const numCards = Math.min(5, Math.ceil(chunk.length / 500));
+      const numCards = Math.min(2, Math.ceil(chunk.length / 500)); 
       const templateString = `Create {numCards} flashcards from these notes about {title}:
 
 {content}
@@ -136,9 +138,10 @@ Example format:
         break;
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 500)); 
     } catch (error) {
       console.error(`Error processing chunk ${i + 1}:`, error);
+      await new Promise((resolve) => setTimeout(resolve, 200)); 
     }
   }
 
@@ -163,9 +166,11 @@ export async function generateQuizQuestions(
   for (let i = 0; i < chunks.length; i++) {
     const chunk = chunks[i];
     try {
-      console.log(`Processing chunk ${i + 1}/${chunks.length}`);
+      console.log(
+        `Processing chunk ${i + 1}/${chunks.length}, length: ${chunk.length}`
+      );
 
-      const numQuestions = Math.min(5, Math.ceil(chunk.length / 500));
+      const numQuestions = Math.min(2, Math.ceil(chunk.length / 500)); 
       const templateString = `Create {numQuestions} multiple choice quiz questions from these notes about {title}:
 
 {content}
@@ -211,9 +216,10 @@ Example format:
         break;
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 500)); 
     } catch (error) {
       console.error(`Error processing chunk ${i + 1}:`, error);
+      await new Promise((resolve) => setTimeout(resolve, 200)); 
     }
   }
 
@@ -243,9 +249,11 @@ export async function generateUniqueQuestions(
   for (let i = 0; i < chunks.length; i++) {
     const chunk = chunks[i];
     try {
-      console.log(`Processing chunk ${i + 1}/${chunks.length}`);
+      console.log(
+        `Processing chunk ${i + 1}/${chunks.length}, length: ${chunk.length}`
+      );
 
-      const numQuestions = Math.min(5, Math.ceil(chunk.length / 500));
+      const numQuestions = Math.min(2, Math.ceil(chunk.length / 500)); 
       const templateString = `Create {numQuestions} new multiple choice quiz questions about {title} that are different from these existing questions:
 
 Existing questions:
@@ -297,9 +305,10 @@ Example format:
         break;
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 500)); 
     } catch (error) {
       console.error(`Error processing chunk ${i + 1}:`, error);
+      await new Promise((resolve) => setTimeout(resolve, 200)); 
     }
   }
 
