@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "app/quizQuestions/create/[id]/actionts.ts": {
+      "maxDuration": 40
+    },
+    "app/flashCards/create/[id]/actionts.ts": {
+      "maxDuration": 40
+    }
+  }
+}
