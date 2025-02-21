@@ -53,11 +53,12 @@ interface GeneratedQuestion {
   explanation: string;
 }
 
-async function processChunkWithRetry(
+// Changed to use a generic type T instead of 'any'
+async function processChunkWithRetry<T>(
   chunk: string,
-  processor: (chunk: string) => Promise<any>,
+  processor: (chunk: string) => Promise<T>,
   maxRetries: number = 3
-): Promise<any> {
+): Promise<T> {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const reducedChunk =
@@ -66,7 +67,7 @@ async function processChunkWithRetry(
 
       return await Promise.race([
         processor(reducedChunk),
-        new Promise((_, reject) =>
+        new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error("Processing timeout")), 8000)
         ),
       ]);
@@ -76,6 +77,7 @@ async function processChunkWithRetry(
       await new Promise((resolve) => setTimeout(resolve, 200 * attempt));
     }
   }
+  throw new Error("Failed to process chunk after all retries");
 }
 
 async function createPromptChain(
