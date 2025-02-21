@@ -6,6 +6,7 @@ import {
   getQuizQuestionsForNoteId,
 } from "@/services/questions.service";
 import { generateUniqueQuestions } from "@/utils/createAiQuestions";
+import { unstable_noStore as noStore } from "next/cache";
 
 interface GeneratedQuestion {
   question: string;
@@ -17,6 +18,7 @@ interface GeneratedQuestion {
 export async function generateQuizQuestionsAction(
   noteId: string
 ): Promise<GeneratedQuestion[]> {
+  noStore();
   const note = await getNoteById(noteId);
 
   if (!note) {
