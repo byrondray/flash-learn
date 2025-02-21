@@ -8,8 +8,9 @@ const chat = new ChatOpenAI({
   modelName: "gpt-4-turbo-preview",
   temperature: 0.7,
   openAIApiKey: process.env.OPENAI_API_KEY,
-  timeout: 20000,
-  maxRetries: 2,
+  timeout: 30000,
+  maxRetries: 3,
+  streaming: false,
 });
 
 function sanitizeContent(content: string): string {
@@ -18,7 +19,7 @@ function sanitizeContent(content: string): string {
 
 function splitContentIntoChunks(
   content: string,
-  maxChunkSize: number = 2000
+  maxChunkSize: number = 1500
 ): string[] {
   const sentences = content.split(/(?<=[.!?])\s+/);
   const chunks: string[] = [];
@@ -52,21 +53,49 @@ interface GeneratedQuestion {
   explanation: string;
 }
 
+async function processChunkWithTimeout<T>(
+  processor: () => Promise<T>,
+  timeoutMs: number = 25000
+): Promise<T> {
+  return Promise.race([
+    processor(),
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error("Processing timeout")), timeoutMs)
+    ),
+  ]);
+}
+
+async function createPromptChain(
+  templateString: string,
+  parser: JsonOutputParser,
+  inputVariables: string[]
+) {
+  const prompt = new PromptTemplate({
+    template: templateString,
+    inputVariables,
+  });
+
+  return prompt.pipe(chat).pipe(parser);
+}
+
 export async function generateFlashcards(
   title: string,
   content: string
 ): Promise<GeneratedFlashcard[]> {
   noStore();
+  console.log("Starting flashcard generation for:", title);
+
   const parser = new JsonOutputParser();
   const chunks = splitContentIntoChunks(content);
   let allFlashcards: GeneratedFlashcard[] = [];
 
-  for (const chunk of chunks) {
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i];
     try {
-      const promptTemplate = `Create ${Math.min(
-        5,
-        Math.ceil(chunk.length / 500)
-      )} flashcards from these notes about {title}:
+      console.log(`Processing chunk ${i + 1}/${chunks.length}`);
+
+      const numCards = Math.min(5, Math.ceil(chunk.length / 500));
+      const templateString = `Create {numCards} flashcards from these notes about {title}:
 
 {content}
 
@@ -75,36 +104,46 @@ Return a JSON object with a 'flashcards' array. Each flashcard should have:
 - back: string (the explanation or answer)
 
 Example format:
-{{ 
+{
   "flashcards": [
-    {{ 
+    {
       "front": "What is a closure in JavaScript?",
       "back": "A closure is a function that has access to variables in its outer scope, even after the outer function has returned."
-    }}
+    }
   ]
-}}`;
+}`;
 
-      const prompt = PromptTemplate.fromTemplate(promptTemplate);
-      const chain = prompt.pipe(chat).pipe(parser);
-
-      const sanitizedChunk = sanitizeContent(chunk);
-      const result = await chain.invoke({
-        title: sanitizeContent(title),
-        content: sanitizedChunk,
-        "Math.min(5, Math.ceil(chunk.length / 500))": Math.min(
-          5,
-          Math.ceil(chunk.length / 500)
-        ),
+      const chain = await createPromptChain(templateString, parser, [
+        "title",
+        "content",
+        "numCards",
+      ]);
+      const result = await processChunkWithTimeout(async () => {
+        return chain.invoke({
+          title: sanitizeContent(title),
+          content: sanitizeContent(chunk),
+          numCards,
+        });
       });
 
       allFlashcards = [...allFlashcards, ...result.flashcards];
+      console.log(
+        `Generated ${result.flashcards.length} flashcards from chunk ${i + 1}`
+      );
 
       if (allFlashcards.length >= 5) {
+        console.log("Reached target number of flashcards");
         break;
       }
+
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     } catch (error) {
-      console.error("Error generating flashcards for chunk:", error);
+      console.error(`Error processing chunk ${i + 1}:`, error);
     }
+  }
+
+  if (allFlashcards.length === 0) {
+    throw new Error("Failed to generate any flashcards");
   }
 
   return allFlashcards.slice(0, 5);
@@ -115,36 +154,71 @@ export async function generateQuizQuestions(
   content: string
 ): Promise<GeneratedQuestion[]> {
   noStore();
+  console.log("Starting quiz question generation for:", title);
+
   const parser = new JsonOutputParser();
   const chunks = splitContentIntoChunks(content);
   let allQuestions: GeneratedQuestion[] = [];
 
-  for (const chunk of chunks) {
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i];
     try {
-      const promptTemplate =
-        'Create ${Math.min(5, Math.ceil(chunk.length / 500))} multiple choice quiz questions from these notes about {title}:\n\n{content}\n\nReturn a JSON object with a \'questions\' array. Each question should have:\n- question: string (the question text)\n- options: string[] (array of 4 possible answers)\n- correctAnswer: string (the correct answer, must be one of the options)\n- explanation: string (brief explanation of why the answer is correct)\n\nExample format:\n{\n  "questions": [\n    {\n      "question": "What is the primary purpose of async/await in JavaScript?",\n      "options": ["To handle asynchronous operations with cleaner syntax", "To make code run faster", "To create loops", "To define variables"],\n      "correctAnswer": "To handle asynchronous operations with cleaner syntax",\n      "explanation": "async/await provides a more readable and maintainable way to work with Promises and asynchronous code."\n    }\n  ]\n}';
+      console.log(`Processing chunk ${i + 1}/${chunks.length}`);
 
-      const prompt = PromptTemplate.fromTemplate(promptTemplate);
-      const chain = prompt.pipe(chat).pipe(parser);
+      const numQuestions = Math.min(5, Math.ceil(chunk.length / 500));
+      const templateString = `Create {numQuestions} multiple choice quiz questions from these notes about {title}:
 
-      const sanitizedChunk = sanitizeContent(chunk);
-      const result = await chain.invoke({
-        title: sanitizeContent(title),
-        content: sanitizedChunk,
-        "Math.min(5, Math.ceil(chunk.length / 500))": Math.min(
-          5,
-          Math.ceil(chunk.length / 500)
-        ),
+{content}
+
+Return a JSON object with a 'questions' array. Each question should have:
+- question: string (the question text)
+- options: string[] (array of 4 possible answers)
+- correctAnswer: string (the correct answer, must be one of the options)
+- explanation: string (brief explanation of why the answer is correct)
+
+Example format:
+{
+  "questions": [
+    {
+      "question": "What is the primary purpose of async/await in JavaScript?",
+      "options": ["To handle asynchronous operations with cleaner syntax", "To make code run faster", "To create loops", "To define variables"],
+      "correctAnswer": "To handle asynchronous operations with cleaner syntax",
+      "explanation": "async/await provides a more readable and maintainable way to work with Promises and asynchronous code."
+    }
+  ]
+}`;
+
+      const chain = await createPromptChain(templateString, parser, [
+        "title",
+        "content",
+        "numQuestions",
+      ]);
+      const result = await processChunkWithTimeout(async () => {
+        return chain.invoke({
+          title: sanitizeContent(title),
+          content: sanitizeContent(chunk),
+          numQuestions,
+        });
       });
 
       allQuestions = [...allQuestions, ...result.questions];
+      console.log(
+        `Generated ${result.questions.length} questions from chunk ${i + 1}`
+      );
 
       if (allQuestions.length >= 5) {
+        console.log("Reached target number of questions");
         break;
       }
+
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     } catch (error) {
-      console.error("Error generating quiz questions for chunk:", error);
+      console.error(`Error processing chunk ${i + 1}:`, error);
     }
+  }
+
+  if (allQuestions.length === 0) {
+    throw new Error("Failed to generate any questions");
   }
 
   return allQuestions.slice(0, 5);
@@ -156,6 +230,8 @@ export async function generateUniqueQuestions(
   existingQuestions: QuizQuestions[]
 ): Promise<GeneratedQuestion[]> {
   noStore();
+  console.log("Starting unique question generation for:", title);
+
   const existingQuestionsText = existingQuestions
     .map((q) => sanitizeContent(q.question))
     .join("\n");
@@ -164,32 +240,66 @@ export async function generateUniqueQuestions(
   const chunks = splitContentIntoChunks(content);
   let allQuestions: GeneratedQuestion[] = [];
 
-  for (const chunk of chunks) {
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i];
     try {
-      const promptTemplate =
-        'Create ${Math.min(5, Math.ceil(chunk.length / 500))} new multiple choice quiz questions about {title} that are different from these existing questions:\n\nExisting questions:\n{existingQuestions}\n\nContent to base new questions on:\n{content}\n\nReturn a JSON object with a \'questions\' array. Each question should have:\n- question: string (must be different from existing questions)\n- options: string[] (array of 4 possible answers)\n- correctAnswer: string (must be one of the options)\n- explanation: string (brief explanation of why it\'s correct)\n\nExample format:\n{{\n  "questions": [\n    {{\n      "question": "What is the difference between let and const in JavaScript?",\n      "options": ["let can be reassigned, const cannot", "let is function-scoped, const is block-scoped", "let is only for numbers, const is for strings", "There is no difference"],\n      "correctAnswer": "let can be reassigned, const cannot",\n      "explanation": "While both let and const are block-scoped, variables declared with let can be reassigned but const variables cannot be reassigned after initialization."\n    }}\n  ]\n}}';
+      console.log(`Processing chunk ${i + 1}/${chunks.length}`);
 
-      const prompt = PromptTemplate.fromTemplate(promptTemplate);
-      const chain = prompt.pipe(chat).pipe(parser);
+      const numQuestions = Math.min(5, Math.ceil(chunk.length / 500));
+      const templateString = `Create {numQuestions} new multiple choice quiz questions about {title} that are different from these existing questions:
 
-      const sanitizedChunk = sanitizeContent(chunk);
-      const result = await chain.invoke({
-        title: sanitizeContent(title),
-        content: sanitizedChunk,
-        existingQuestions: existingQuestionsText,
-        "Math.min(5, Math.ceil(chunk.length / 500))": Math.min(
-          5,
-          Math.ceil(chunk.length / 500)
-        ),
+Existing questions:
+{existingQuestions}
+
+Content to base new questions on:
+{content}
+
+Return a JSON object with a 'questions' array. Each question should have:
+- question: string (must be different from existing questions)
+- options: string[] (array of 4 possible answers)
+- correctAnswer: string (must be one of the options)
+- explanation: string (brief explanation of why it's correct)
+
+Example format:
+{
+  "questions": [
+    {
+      "question": "What is the difference between let and const in JavaScript?",
+      "options": ["let can be reassigned, const cannot", "let is function-scoped, const is block-scoped", "let is only for numbers, const is for strings", "There is no difference"],
+      "correctAnswer": "let can be reassigned, const cannot",
+      "explanation": "While both let and const are block-scoped, variables declared with let can be reassigned but const variables cannot be reassigned after initialization."
+    }
+  ]
+}`;
+
+      const chain = await createPromptChain(templateString, parser, [
+        "title",
+        "content",
+        "numQuestions",
+        "existingQuestions",
+      ]);
+      const result = await processChunkWithTimeout(async () => {
+        return chain.invoke({
+          title: sanitizeContent(title),
+          content: sanitizeContent(chunk),
+          existingQuestions: existingQuestionsText,
+          numQuestions,
+        });
       });
 
       allQuestions = [...allQuestions, ...result.questions];
+      console.log(
+        `Generated ${result.questions.length} questions from chunk ${i + 1}`
+      );
 
       if (allQuestions.length >= 5) {
+        console.log("Reached target number of questions");
         break;
       }
+
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     } catch (error) {
-      console.error("Error generating unique questions for chunk:", error);
+      console.error(`Error processing chunk ${i + 1}:`, error);
     }
   }
 
