@@ -104,14 +104,14 @@ Return a JSON object with a 'flashcards' array. Each flashcard should have:
 - back: string (the explanation or answer)
 
 Example format:
-{
+{{
   "flashcards": [
-    {
+    {{
       "front": "What is a closure in JavaScript?",
       "back": "A closure is a function that has access to variables in its outer scope, even after the outer function has returned."
-    }
+    }}
   ]
-}`;
+}}`;
 
       const chain = await createPromptChain(templateString, parser, [
         "title",
@@ -177,16 +177,16 @@ Return a JSON object with a 'questions' array. Each question should have:
 - explanation: string (brief explanation of why the answer is correct)
 
 Example format:
-{
+{{
   "questions": [
-    {
+    {{
       "question": "What is the primary purpose of async/await in JavaScript?",
       "options": ["To handle asynchronous operations with cleaner syntax", "To make code run faster", "To create loops", "To define variables"],
       "correctAnswer": "To handle asynchronous operations with cleaner syntax",
       "explanation": "async/await provides a more readable and maintainable way to work with Promises and asynchronous code."
-    }
+    }}
   ]
-}`;
+}}`;
 
       const chain = await createPromptChain(templateString, parser, [
         "title",
@@ -261,16 +261,16 @@ Return a JSON object with a 'questions' array. Each question should have:
 - explanation: string (brief explanation of why it's correct)
 
 Example format:
-{
+{{
   "questions": [
-    {
+    {{
       "question": "What is the difference between let and const in JavaScript?",
       "options": ["let can be reassigned, const cannot", "let is function-scoped, const is block-scoped", "let is only for numbers, const is for strings", "There is no difference"],
       "correctAnswer": "let can be reassigned, const cannot",
       "explanation": "While both let and const are block-scoped, variables declared with let can be reassigned but const variables cannot be reassigned after initialization."
-    }
+    }}
   ]
-}`;
+}}`;
 
       const chain = await createPromptChain(templateString, parser, [
         "title",
