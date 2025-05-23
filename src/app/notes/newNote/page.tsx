@@ -8,6 +8,13 @@ import { useParams, useRouter } from "next/navigation";
 import { saveNote, updateExistingNote, fetchNote } from "./actions";
 import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
 import { Button } from "@/components/ui/button";
+import { FileText, Brain, Loader2, Plus } from "lucide-react";
+import {
+  PageTransition,
+  SlideIn,
+  FadeIn,
+  HoverScale,
+} from "@/components/ui/motion";
 
 export default function NotePage() {
   const { id } = useParams();
@@ -101,44 +108,63 @@ export default function NotePage() {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <PageTransition>
+        <div className="flex items-center justify-center min-h-screen">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      </PageTransition>
+    );
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center gap-4 px-4 mb-4">
-        <div className="flex-1">
-          <Input
-            placeholder="Note title"
-            value={title}
-            onChange={handleInputChange}
+    <PageTransition>
+      <div className="flex flex-col h-full">
+        <SlideIn direction="down">
+          <div className="flex items-center gap-4 px-4 mb-4">
+            <div className="flex-1">
+              <FadeIn delay={0.1}>
+                <Input
+                  placeholder="Enter note title..."
+                  value={title}
+                  onChange={handleInputChange}
+                  className="text-lg font-medium"
+                />
+              </FadeIn>
+            </div>
+            <HoverScale>
+              <Button
+                className="cursor-pointer"
+                variant="outline"
+                onClick={() => router.push(`/flashCards/create/${noteId}`)}
+                disabled={!noteId}
+              >
+                <Brain className="h-4 w-4 mr-2" />
+                Create Flash Cards
+              </Button>
+            </HoverScale>
+            <HoverScale>
+              <Button
+                variant="outline"
+                className="cursor-pointer"
+                onClick={() => router.push(`/quizQuestions/create/${noteId}`)}
+                disabled={!noteId}
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Create Quiz
+              </Button>
+            </HoverScale>
+          </div>
+        </SlideIn>
+        <FadeIn delay={0.2} className="flex-1 px-4">
+          <Textarea
+            placeholder="Start writing your new note here..."
+            className="min-h-[calc(100vh-200px)] w-full resize-none border-0 focus:ring-0 text-base leading-relaxed"
+            value={content}
+            onChange={handleTextareaChange}
           />
-        </div>
-        <Button
-          className="cursor-pointer"
-          variant="outline"
-          onClick={() => router.push(`/flashCards/create/${noteId}`)}
-          disabled={!noteId}
-        >
-          Create Flash Cards
-        </Button>
-        <Button
-          variant="outline"
-          className="cursor-pointer"
-          onClick={() => router.push(`/quiz/create/${noteId}`)}
-          disabled={!noteId}
-        >
-          Create Quiz
-        </Button>
+        </FadeIn>
       </div>
-      <div className="flex-1 px-4">
-        <Textarea
-          placeholder="Start typing..."
-          className="min-h-[calc(100vh-200px)] w-full"
-          value={content}
-          onChange={handleTextareaChange}
-        />
-      </div>
-    </div>
+    </PageTransition>
   );
 }

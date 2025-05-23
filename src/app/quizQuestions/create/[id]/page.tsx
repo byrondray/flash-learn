@@ -8,6 +8,14 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { generateQuizQuestionsAction, saveQuizQuestions } from "./actionts";
 import { Loader2 } from "lucide-react";
+import {
+  PageTransition,
+  SlideIn,
+  FadeIn,
+  HoverScale,
+  StaggerContainer,
+  StaggerItem,
+} from "@/components/ui/motion";
 
 interface QuizQuestion {
   question: string;
@@ -50,109 +58,132 @@ export default function CreateQuiz() {
       setSaving(false);
     }
   }
-
   return (
-    <div className="container mx-auto py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold">Create Quiz</h1>
-        <div className="space-x-4">
-          <Button
-            onClick={handleGenerateQuestions}
-            disabled={loading || saving}
-          >
-            {loading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              "Generate Questions"
-            )}
-          </Button>
-          <Button
-            onClick={handleSaveQuestions}
-            disabled={questions.length === 0 || loading || saving}
-            variant="default"
-          >
-            {saving ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              "Save Quiz"
-            )}
-          </Button>
-        </div>
-      </div>
-
-      <div className="space-y-8">
-        {questions.map((question, index) => (
-          <Card key={index}>
-            <CardHeader>
-              <CardTitle>Question {index + 1}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <p className="font-medium">{question.question}</p>
-                <RadioGroup
-                  value={selectedAnswers[index]}
-                  onValueChange={(value) =>
-                    setSelectedAnswers((prev) => ({ ...prev, [index]: value }))
-                  }
+    <PageTransition>
+      <div className="container mx-auto py-8">
+        <SlideIn direction="down">
+          <div className="flex justify-between items-center mb-8">
+            <h1 className="text-2xl font-bold">Create Quiz</h1>
+            <div className="space-x-4">
+              <HoverScale>
+                <Button
+                  onClick={handleGenerateQuestions}
+                  disabled={loading || saving}
                 >
-                  {question.options.map((option, optionIndex) => (
-                    <div
-                      key={optionIndex}
-                      className="flex items-center space-x-2"
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    "Generate Questions"
+                  )}
+                </Button>
+              </HoverScale>
+              <HoverScale>
+                <Button
+                  onClick={handleSaveQuestions}
+                  disabled={questions.length === 0 || loading || saving}
+                  variant="default"
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Quiz"
+                  )}
+                </Button>
+              </HoverScale>
+            </div>
+          </div>
+        </SlideIn>
+
+        <StaggerContainer className="space-y-8">
+          {questions.map((question, index) => (
+            <StaggerItem key={index}>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Question {index + 1}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <p className="font-medium">{question.question}</p>
+                    <RadioGroup
+                      value={selectedAnswers[index]}
+                      onValueChange={(value) =>
+                        setSelectedAnswers((prev) => ({
+                          ...prev,
+                          [index]: value,
+                        }))
+                      }
                     >
-                      <RadioGroupItem
-                        value={option}
-                        id={`q${index}-${optionIndex}`}
-                      />
-                      <Label htmlFor={`q${index}-${optionIndex}`}>
-                        {option}
-                      </Label>
-                    </div>
-                  ))}
-                </RadioGroup>
-                {selectedAnswers[index] && (
-                  <div className="mt-4 p-4 bg-muted rounded-lg space-y-2">
-                    <p className="font-medium">
-                      {selectedAnswers[index] === question.correctAnswer
-                        ? "✅ Correct!"
-                        : "❌ Incorrect"}
-                    </p>
-                    {selectedAnswers[index] !== question.correctAnswer && (
-                      <p className="text-sm">
-                        The correct answer is: {question.correctAnswer}
-                      </p>
+                      {question.options.map((option, optionIndex) => (
+                        <div
+                          key={optionIndex}
+                          className="flex items-center space-x-2"
+                        >
+                          <RadioGroupItem
+                            value={option}
+                            id={`q${index}-${optionIndex}`}
+                          />
+                          <Label htmlFor={`q${index}-${optionIndex}`}>
+                            {option}
+                          </Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                    {selectedAnswers[index] && (
+                      <FadeIn>
+                        <div className="mt-4 p-4 bg-muted rounded-lg space-y-2">
+                          <p className="font-medium">
+                            {selectedAnswers[index] === question.correctAnswer
+                              ? "✅ Correct!"
+                              : "❌ Incorrect"}
+                          </p>
+                          {selectedAnswers[index] !==
+                            question.correctAnswer && (
+                            <p className="text-sm">
+                              The correct answer is: {question.correctAnswer}
+                            </p>
+                          )}
+                          <p className="text-sm text-muted-foreground">
+                            {question.explanation}
+                          </p>
+                        </div>
+                      </FadeIn>
                     )}
-                    <p className="text-sm text-muted-foreground">
-                      {question.explanation}
-                    </p>
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                </CardContent>
+              </Card>
+            </StaggerItem>
+          ))}
+        </StaggerContainer>
 
         {questions.length > 0 && (
-          <div className="flex justify-end pt-6">
-            <Button onClick={handleSaveQuestions} disabled={saving} size="lg">
-              {saving ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving Quiz...
-                </>
-              ) : (
-                "Save and Continue"
-              )}
-            </Button>
-          </div>
+          <SlideIn direction="up">
+            <div className="flex justify-end pt-6">
+              <HoverScale>
+                <Button
+                  onClick={handleSaveQuestions}
+                  disabled={saving}
+                  size="lg"
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving Quiz...
+                    </>
+                  ) : (
+                    "Save and Continue"
+                  )}
+                </Button>
+              </HoverScale>
+            </div>
+          </SlideIn>
         )}
       </div>
-    </div>
+    </PageTransition>
   );
 }
