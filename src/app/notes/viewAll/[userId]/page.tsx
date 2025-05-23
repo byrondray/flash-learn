@@ -40,6 +40,8 @@ export default function NotesOverviewPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
+  const stripHtml = (html: string) => html.replace(/<[^>]+>/g, "");
+
   useEffect(() => {
     async function loadNotes() {
       if (!user?.id) return;
@@ -139,7 +141,9 @@ export default function NotesOverviewPage() {
                       </CardHeader>
                       <CardContent>
                         <p className="text-sm text-muted-foreground line-clamp-3">
-                          {note.notes.content || "No content"}
+                          {note.notes.content
+                            ? stripHtml(note.notes.content)
+                            : "No content"}
                         </p>
                       </CardContent>
                     </Card>

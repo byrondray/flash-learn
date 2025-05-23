@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useDebounce } from "use-debounce";
-import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor } from "@/components/ui/enhanced-rich-text-editor";
 import { Input } from "@/components/ui/input";
 import { useParams, useRouter } from "next/navigation";
 import { updateExistingNote, fetchNote } from "./actions";
@@ -25,6 +25,8 @@ export default function NotePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [shouldSave, setShouldSave] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
   const noteId = Array.isArray(id) ? id[0] : id;
 
@@ -58,19 +60,22 @@ export default function NotePage() {
 
     loadNote();
   }, [noteId]);
-
   const handleSave = useCallback(async () => {
-    if (!user?.id || !noteId) {
+    if (!user?.id || !noteId || isSaving) {
       return;
     }
 
+    setIsSaving(true);
     try {
       console.log("Updating note:", { noteId, title, content });
       await updateExistingNote(noteId, title, content);
+      setLastSaved(new Date());
     } catch (error) {
       console.error("Error saving note:", error);
+    } finally {
+      setIsSaving(false);
     }
-  }, [user?.id, noteId, title, content]);
+  }, [user?.id, noteId, title, content, isSaving]);
 
   useEffect(() => {
     if (!isLoading) {
@@ -89,9 +94,8 @@ export default function NotePage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTitle(e.target.value);
   };
-
-  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setContent(e.target.value);
+  const handleContentChange = (newContent: string) => {
+    setContent(newContent);
   };
 
   if (error) {
@@ -172,13 +176,13 @@ export default function NotePage() {
               </Button>
             </HoverScale>
           </div>
-        </SlideIn>
+        </SlideIn>{" "}
         <FadeIn delay={0.2} className="flex-1 px-4">
-          <Textarea
+          <RichTextEditor
+            content={content}
+            onChange={handleContentChange}
             placeholder="Start typing your notes here..."
-            className="min-h-[calc(100vh-200px)] w-full resize-none border-0 focus:ring-0 text-base leading-relaxed"
-            value={content}
-            onChange={handleTextareaChange}
+            className="min-h-[calc(100vh-200px)] w-full"
           />
         </FadeIn>
       </div>
