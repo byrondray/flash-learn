@@ -122,12 +122,12 @@ export default function NotesOverviewPage() {
               </Card>
             </FadeIn>
           ) : (
-            <StaggerContainer className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <StaggerContainer className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 items-stretch">
               {filteredNotes.map((note) => (
                 <StaggerItem key={note.notes.id}>
                   <HoverScale scale={1.03}>
                     <Card
-                      className="hover:shadow-lg transition-shadow cursor-pointer group h-full"
+                      className="flex flex-col hover:shadow-lg transition-shadow cursor-pointer group h-60"
                       onClick={() => router.push(`/notes/${note.notes.id}`)}
                     >
                       <CardHeader>
@@ -139,7 +139,7 @@ export default function NotesOverviewPage() {
                           {formatTimeAgo(note.notes.lastUpdated ?? "")}
                         </CardDescription>
                       </CardHeader>
-                      <CardContent>
+                      <CardContent className="flex-1">
                         <p className="text-sm text-muted-foreground line-clamp-3">
                           {note.notes.content
                             ? stripHtml(note.notes.content)
