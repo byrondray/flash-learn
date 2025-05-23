@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { fetchFlashCardsAndNote } from "./actions";
 import { Loader2, RotateCcw, Plus } from "lucide-react";
+import { motion } from "framer-motion";
 import {
   PageTransition,
   SlideIn,
@@ -14,6 +15,7 @@ import {
   StaggerContainer,
   StaggerItem,
   ScaleIn,
+  SimpleFlip,
 } from "@/components/ui/motion";
 
 interface FlashCard {
@@ -128,31 +130,47 @@ export default function ViewFlashCardsPage() {
             </div>
           </FadeIn>
         ) : (
-          <StaggerContainer className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {flashcards.map((card) => (
+          <StaggerContainer className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">            {flashcards.map((card) => (
               <StaggerItem key={card.flashCards.id}>
                 <HoverScale scale={1.05}>
                   <Card
                     className="cursor-pointer hover:shadow-lg transition-all duration-300 h-full"
                     onClick={() => toggleCard(card.flashCards.id)}
-                  >
-                    <CardHeader>
+                  >                    <CardHeader>
                       <CardTitle className="text-sm font-medium flex items-center gap-2">
-                        <RotateCcw className="h-4 w-4" />
+                        <motion.div
+                          animate={{ 
+                            rotate: flippedCards[card.flashCards.id] ? 180 : 0 
+                          }}
+                          transition={{ 
+                            duration: 0.6, 
+                            ease: "easeInOut",
+                            type: "tween"
+                          }}
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                        </motion.div>
                         {flippedCards[card.flashCards.id]
                           ? "Answer"
                           : "Question"}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <ScaleIn>
-                        <p className="min-h-[100px] flex items-center justify-center text-center">
-                          {flippedCards[card.flashCards.id]
-                            ? card.flashCards.answer
-                            : card.flashCards.question}
-                        </p>
-                      </ScaleIn>
-                      <p className="text-xs text-muted-foreground text-center mt-4">
+                      <SimpleFlip
+                        isFlipped={flippedCards[card.flashCards.id] || false}
+                        frontContent={
+                          <div className="min-h-[100px] flex items-center justify-center text-center">
+                            {card.flashCards.question}
+                          </div>
+                        }
+                        backContent={
+                          <div className="min-h-[100px] flex items-center justify-center text-center">
+                            {card.flashCards.answer}
+                          </div>
+                        }
+                        className="mb-4"
+                      />
+                      <p className="text-xs text-muted-foreground text-center">
                         Click to flip
                       </p>
                     </CardContent>

@@ -232,3 +232,160 @@ export function ModalAnimation({
     </AnimatePresence>
   );
 }
+
+// 3D Flip card animation
+export function FlipCard({
+  children,
+  isFlipped,
+  className,
+}: {
+  children: ReactNode;
+  isFlipped: boolean;
+  className?: string;
+}) {
+  return (
+    <motion.div
+      className={className}
+      initial={false}
+      animate={{ rotateY: isFlipped ? 180 : 0 }}
+      transition={{ 
+        duration: 0.6, 
+        ease: "easeInOut",
+        type: "tween"
+      }}
+      style={{
+        transformStyle: "preserve-3d",
+        perspective: "1000px"
+      }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+// Front and back faces for flip card
+export function FlipCardFace({
+  children,
+  isFront = true,
+  className,
+}: {
+  children: ReactNode;
+  isFront?: boolean;
+  className?: string;
+}) {
+  return (
+    <motion.div
+      className={className}
+      style={{
+        backfaceVisibility: "hidden",
+        transform: isFront ? "rotateY(0deg)" : "rotateY(180deg)",
+        position: isFront ? "relative" : "absolute",
+        top: isFront ? "auto" : 0,
+        left: isFront ? "auto" : 0,
+        right: isFront ? "auto" : 0,
+        bottom: isFront ? "auto" : 0,
+      }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+// Alternative simpler flip animation using scale and opacity
+export function SimpleFlip({
+  frontContent,
+  backContent,
+  isFlipped,
+  className,
+}: {
+  frontContent: ReactNode;
+  backContent: ReactNode;
+  isFlipped: boolean;
+  className?: string;
+}) {
+  return (
+    <div className={`relative ${className}`}>
+      <AnimatePresence mode="wait">
+        {!isFlipped ? (
+          <motion.div
+            key="front"
+            initial={{ rotateY: 0, opacity: 1 }}
+            exit={{ rotateY: 90, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+          >
+            {frontContent}
+          </motion.div>
+        ) : (
+          <motion.div
+            key="back"
+            initial={{ rotateY: -90, opacity: 0 }}
+            animate={{ rotateY: 0, opacity: 1 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+          >
+            {backContent}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// Enhanced 3D flip with better perspective and styling
+export function ThreeDFlip({
+  frontContent,
+  backContent,
+  isFlipped,
+  className,
+}: {
+  frontContent: ReactNode;
+  backContent: ReactNode;
+  isFlipped: boolean;
+  className?: string;
+}) {
+  return (
+    <div className={`relative ${className}`} style={{ perspective: "1000px" }}>
+      <motion.div
+        animate={{ rotateY: isFlipped ? 180 : 0 }}
+        transition={{ 
+          duration: 0.8, 
+          ease: "easeInOut",
+          type: "tween"
+        }}
+        style={{ 
+          transformStyle: "preserve-3d",
+          width: "100%",
+          height: "100%"
+        }}
+      >
+        {/* Front face */}
+        <div
+          style={{
+            backfaceVisibility: "hidden",
+            position: "absolute",
+            width: "100%",
+            height: "100%",
+            top: 0,
+            left: 0,
+          }}
+        >
+          {frontContent}
+        </div>
+        
+        {/* Back face */}
+        <div
+          style={{
+            backfaceVisibility: "hidden",
+            position: "absolute",
+            width: "100%", 
+            height: "100%",
+            top: 0,
+            left: 0,
+            transform: "rotateY(180deg)",
+          }}
+        >
+          {backContent}
+        </div>
+      </motion.div>
+    </div>
+  );
+}
