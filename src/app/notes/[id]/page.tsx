@@ -5,10 +5,10 @@ import { useDebounce } from "use-debounce";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useParams, useRouter } from "next/navigation";
-import { saveNote, updateExistingNote, fetchNote } from "./actions";
+import { updateExistingNote, fetchNote } from "./actions";
 import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
 import { Button } from "@/components/ui/button";
-import { FileText, Brain, Loader2 } from "lucide-react";
+import { FileText, Brain, Loader2, ArrowLeft } from "lucide-react";
 import {
   PageTransition,
   SlideIn,
@@ -19,69 +19,58 @@ import {
 export default function NotePage() {
   const { id } = useParams();
   const router = useRouter();
-  const user = useKindeBrowserClient().getUser();
+  const { user } = useKindeBrowserClient();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [noteId, setNoteId] = useState<string | null>(
-    id ? (Array.isArray(id) ? id[0] : id) : null
-  );
-  const [isLoading, setIsLoading] = useState(!!noteId);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [shouldSave, setShouldSave] = useState(false);
 
-  console.log("Current noteId:", noteId);
+  const noteId = Array.isArray(id) ? id[0] : id;
 
   const [debouncedTitle] = useDebounce(title, 2000);
   const [debouncedContent] = useDebounce(content, 2000);
 
   useEffect(() => {
     async function loadNote() {
-      if (noteId) {
-        try {
-          const note = await fetchNote(noteId);
-          console.log("Fetched note:", note);
-          if (note) {
-            setTitle(note.notes.title || "");
-            setContent(note.notes.content || "");
-          }
-        } catch (error) {
-          console.error("Error loading note:", error);
-        }
+      if (!noteId) {
+        setError("No note ID provided");
+        setIsLoading(false);
+        return;
       }
-      setIsLoading(false);
+
+      try {
+        const note = await fetchNote(noteId);
+        console.log("Fetched note:", note);
+        if (note) {
+          setTitle(note.notes.title || "");
+          setContent(note.notes.content || "");
+        } else {
+          setError("Note not found");
+        }
+      } catch (error) {
+        console.error("Error loading note:", error);
+        setError("Failed to load note");
+      } finally {
+        setIsLoading(false);
+      }
     }
 
     loadNote();
   }, [noteId]);
 
   const handleSave = useCallback(async () => {
-    if (!user?.id) {
-      console.log("No user ID found");
+    if (!user?.id || !noteId) {
       return;
     }
-
-    if (!title.trim() && !content.trim()) {
-      return;
-    }
-
-    console.log("Saving note...", { noteId, title, content });
 
     try {
-      if (noteId) {
-        console.log("Updating existing note");
-        await updateExistingNote(noteId, title, content);
-      } else {
-        console.log("Creating new note");
-        const [newNote] = await saveNote(user.id, title, content);
-        console.log("New note created:", newNote);
-        if (newNote) {
-          setNoteId(newNote.id);
-          router.push(`/notes/${newNote.id}`);
-        }
-      }
+      console.log("Updating note:", { noteId, title, content });
+      await updateExistingNote(noteId, title, content);
     } catch (error) {
       console.error("Error saving note:", error);
     }
-  }, [user?.id, noteId, title, content, router]);
+  }, [user?.id, noteId, title, content]);
 
   useEffect(() => {
     if (!isLoading) {
@@ -99,19 +88,41 @@ export default function NotePage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTitle(e.target.value);
-    console.log("Title changed:", e.target.value);
   };
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setContent(e.target.value);
-    console.log("Content changed:", e.target.value);
   };
+
+  if (error) {
+    return (
+      <PageTransition>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center space-y-4 max-w-md">
+            <div className="text-red-500 text-lg font-medium">{error}</div>
+            <HoverScale>
+              <Button
+                variant="outline"
+                onClick={() => router.push(`/notes/viewAll/${user?.id}`)}
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Notes
+              </Button>
+            </HoverScale>
+          </div>
+        </div>
+      </PageTransition>
+    );
+  }
 
   if (isLoading) {
     return (
       <PageTransition>
         <div className="flex items-center justify-center min-h-screen">
-          <Loader2 className="h-8 w-8 animate-spin" />
+          <div className="text-center space-y-4">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+            <p className="text-sm text-muted-foreground">Loading note...</p>
+          </div>
         </div>
       </PageTransition>
     );
@@ -122,6 +133,16 @@ export default function NotePage() {
       <div className="flex flex-col h-full">
         <SlideIn direction="down">
           <div className="flex items-center gap-4 px-4 mb-4">
+            <HoverScale>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.push(`/notes/viewAll/${user?.id}`)}
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
+              </Button>
+            </HoverScale>
             <div className="flex-1">
               <FadeIn delay={0.1}>
                 <Input
@@ -134,10 +155,8 @@ export default function NotePage() {
             </div>
             <HoverScale>
               <Button
-                className="cursor-pointer"
                 variant="outline"
                 onClick={() => router.push(`/flashCards/create/${noteId}`)}
-                disabled={!noteId}
               >
                 <Brain className="h-4 w-4 mr-2" />
                 Create Flash Cards
@@ -146,9 +165,7 @@ export default function NotePage() {
             <HoverScale>
               <Button
                 variant="outline"
-                className="cursor-pointer"
                 onClick={() => router.push(`/quizQuestions/create/${noteId}`)}
-                disabled={!noteId}
               >
                 <FileText className="h-4 w-4 mr-2" />
                 Create Quiz

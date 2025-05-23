@@ -248,14 +248,14 @@ export function FlipCard({
       className={className}
       initial={false}
       animate={{ rotateY: isFlipped ? 180 : 0 }}
-      transition={{ 
-        duration: 0.6, 
+      transition={{
+        duration: 0.6,
         ease: "easeInOut",
-        type: "tween"
+        type: "tween",
       }}
       style={{
         transformStyle: "preserve-3d",
-        perspective: "1000px"
+        perspective: "1000px",
       }}
     >
       {children}
@@ -346,15 +346,15 @@ export function ThreeDFlip({
     <div className={`relative ${className}`} style={{ perspective: "1000px" }}>
       <motion.div
         animate={{ rotateY: isFlipped ? 180 : 0 }}
-        transition={{ 
-          duration: 0.8, 
+        transition={{
+          duration: 0.8,
           ease: "easeInOut",
-          type: "tween"
+          type: "tween",
         }}
-        style={{ 
+        style={{
           transformStyle: "preserve-3d",
           width: "100%",
-          height: "100%"
+          height: "100%",
         }}
       >
         {/* Front face */}
@@ -370,13 +370,13 @@ export function ThreeDFlip({
         >
           {frontContent}
         </div>
-        
+
         {/* Back face */}
         <div
           style={{
             backfaceVisibility: "hidden",
             position: "absolute",
-            width: "100%", 
+            width: "100%",
             height: "100%",
             top: 0,
             left: 0,

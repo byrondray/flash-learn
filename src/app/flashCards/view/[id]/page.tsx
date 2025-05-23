@@ -130,22 +130,26 @@ export default function ViewFlashCardsPage() {
             </div>
           </FadeIn>
         ) : (
-          <StaggerContainer className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">            {flashcards.map((card) => (
+          <StaggerContainer className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {" "}
+            {flashcards.map((card) => (
               <StaggerItem key={card.flashCards.id}>
                 <HoverScale scale={1.05}>
                   <Card
                     className="cursor-pointer hover:shadow-lg transition-all duration-300 h-full"
                     onClick={() => toggleCard(card.flashCards.id)}
-                  >                    <CardHeader>
+                  >
+                    {" "}
+                    <CardHeader>
                       <CardTitle className="text-sm font-medium flex items-center gap-2">
                         <motion.div
-                          animate={{ 
-                            rotate: flippedCards[card.flashCards.id] ? 180 : 0 
+                          animate={{
+                            rotate: flippedCards[card.flashCards.id] ? 180 : 0,
                           }}
-                          transition={{ 
-                            duration: 0.6, 
+                          transition={{
+                            duration: 0.6,
                             ease: "easeInOut",
-                            type: "tween"
+                            type: "tween",
                           }}
                         >
                           <RotateCcw className="h-4 w-4" />

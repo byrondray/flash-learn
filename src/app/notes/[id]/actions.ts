@@ -1,11 +1,6 @@
 "use server";
 
-import { createNote, updateNote, getNoteById } from "@/services/note.service";
-
-export async function saveNote(userId: string, title: string, content: string) {
-  console.log("Server action: Creating note", { userId, title, content });
-  return await createNote(userId, title, content);
-}
+import { updateNote, getNoteById } from "@/services/note.service";
 
 export async function updateExistingNote(
   noteId: string,
