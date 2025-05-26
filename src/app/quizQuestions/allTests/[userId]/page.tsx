@@ -32,6 +32,8 @@ interface QuizNote {
   questionCount: number;
 }
 
+const stripHtml = (html: string) => html.replace(/<[^>]+>/g, "").trim();
+
 export default function AvailableQuizzesPage() {
   const { user } = useKindeBrowserClient();
   const router = useRouter();
@@ -126,7 +128,7 @@ export default function AvailableQuizzesPage() {
                       <CardContent>
                         <div className="flex justify-between items-center">
                           <p className="text-sm text-muted-foreground line-clamp-2 flex-1">
-                            {quiz.note.content}
+                            {stripHtml(quiz.note.content)}
                           </p>
                           <HoverScale scale={1.1}>
                             <Button variant="ghost" size="icon">

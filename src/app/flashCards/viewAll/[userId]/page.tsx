@@ -29,6 +29,8 @@ interface FlashcardSet {
   flashcardCount: number;
 }
 
+const stripHtml = (html: string) => html.replace(/<[^>]+>/g, "").trim();
+
 export default function FlashcardsOverviewPage() {
   const { user } = useKindeBrowserClient();
   const router = useRouter();
@@ -124,7 +126,7 @@ export default function FlashcardsOverviewPage() {
                       </CardHeader>
                       <CardContent>
                         <p className="text-sm text-muted-foreground line-clamp-2">
-                          {set.content}
+                          {stripHtml(set.content)}
                         </p>
                       </CardContent>
                     </Card>
