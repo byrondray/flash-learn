@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getThreeMostRecentNotesForUser } from "@/services/note.service";
-import { checkAndStoreKindeUser } from "@/utils/checkAndStoreKindeUser";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { BarChart, BookOpen, Brain, Plus } from "lucide-react";
 import Link from "next/link";
@@ -28,8 +27,6 @@ export default async function Home() {
   if (!user || !user.id) {
     return <p className="text-center text-red-500">Error: User not found</p>;
   }
-
-  await checkAndStoreKindeUser();
 
   const threeMostRecentNotes =
     (await getThreeMostRecentNotesForUser(user.id)) || [];

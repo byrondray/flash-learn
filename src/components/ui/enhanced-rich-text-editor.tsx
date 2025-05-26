@@ -120,8 +120,8 @@ export function RichTextEditor({
   lastSaved,
 }: RichTextEditorProps) {
   const [isBubbleMenuOpen, setIsBubbleMenuOpen] = useState(false);
-
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit.configure({
         bulletList: {
@@ -143,9 +143,6 @@ export function RichTextEditor({
       Highlight.configure({
         multicolor: true,
       }),
-      ListItem,
-      BulletList,
-      OrderedList,
       TaskList,
       TaskItem.configure({
         nested: true,

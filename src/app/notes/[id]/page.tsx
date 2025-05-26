@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useDebounce } from "use-debounce";
 import { RichTextEditor } from "@/components/ui/enhanced-rich-text-editor";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,12 @@ import {
   FadeIn,
   HoverScale,
 } from "@/components/ui/motion";
+import { useWebSocket } from "@/hooks/useWebSocket";
+import {
+  CollaborationService,
+  CollaborationUser,
+} from "@/services/collaboration.service";
+import { CollaborationIndicator } from "@/components/ui/collaboration-indicator";
 
 export default function NotePage() {
   const { id } = useParams();
@@ -27,11 +33,85 @@ export default function NotePage() {
   const [shouldSave, setShouldSave] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [collaborationUsers, setCollaborationUsers] = useState<
+    CollaborationUser[]
+  >([]);
+  const [isUpdatingFromCollaboration, setIsUpdatingFromCollaboration] =
+    useState(false);
 
   const noteId = Array.isArray(id) ? id[0] : id;
+  const collaborationServiceRef = useRef<CollaborationService | null>(null);
 
   const [debouncedTitle] = useDebounce(title, 2000);
   const [debouncedContent] = useDebounce(content, 2000);
+  // WebSocket connection for real-time collaboration
+  const websocketUrl =
+    process.env.NEXT_PUBLIC_WEBSOCKET_URL ||
+    "wss://457dfe2wil.execute-api.us-east-2.amazonaws.com/dev";
+
+  const {
+    isConnected: isWebSocketConnected,
+    isConnecting: isWebSocketConnecting,
+    sendContentUpdate,
+    activeUsers,
+  } = useWebSocket({
+    url: websocketUrl,
+    userId: user?.id,
+    noteId: noteId,
+    onMessage: (message) => {
+      collaborationServiceRef.current?.processMessage(message);
+    },
+    onUserJoined: (userId) => {
+      console.log("User joined:", userId);
+    },
+    onUserLeft: (userId) => {
+      console.log("User left:", userId);
+    },
+    onConnect: () => {
+      console.log("Connected to collaboration server");
+    },
+    onDisconnect: () => {
+      console.log("Disconnected from collaboration server");
+    },
+    onError: (error) => {
+      console.error("WebSocket error:", error);
+    },
+  });
+
+  // Initialize collaboration service
+  useEffect(() => {
+    if (!collaborationServiceRef.current) {
+      collaborationServiceRef.current = new CollaborationService(
+        // onUsersUpdate
+        (users) => {
+          setCollaborationUsers(users);
+        },
+        // onContentUpdate
+        (newContent, newTitle) => {
+          setIsUpdatingFromCollaboration(true);
+          if (newContent !== undefined) {
+            setContent(newContent);
+          }
+          if (newTitle !== undefined) {
+            setTitle(newTitle);
+          }
+          // Don't trigger save for collaborative updates
+          setTimeout(() => {
+            setIsUpdatingFromCollaboration(false);
+          }, 100);
+        },
+        // onCursorUpdate
+        (userId, position) => {
+          console.log("Cursor update:", userId, position);
+          // Handle cursor updates if needed
+        }
+      );
+    }
+
+    return () => {
+      collaborationServiceRef.current?.destroy();
+    };
+  }, []);
 
   useEffect(() => {
     async function loadNote() {
@@ -76,26 +156,42 @@ export default function NotePage() {
       setIsSaving(false);
     }
   }, [user?.id, noteId, title, content, isSaving]);
-
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && !isUpdatingFromCollaboration) {
       setShouldSave(true);
     }
-  }, [debouncedTitle, debouncedContent, isLoading]);
+  }, [
+    debouncedTitle,
+    debouncedContent,
+    isLoading,
+    isUpdatingFromCollaboration,
+  ]);
 
   useEffect(() => {
-    if (shouldSave && !isLoading) {
+    if (shouldSave && !isLoading && !isUpdatingFromCollaboration) {
       console.log("Triggering save...");
       handleSave();
       setShouldSave(false);
     }
-  }, [shouldSave, isLoading, handleSave]);
+  }, [shouldSave, isLoading, isUpdatingFromCollaboration, handleSave]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTitle(e.target.value);
+    const newTitle = e.target.value;
+    setTitle(newTitle);
+
+    // Send real-time update for title changes
+    if (isWebSocketConnected && !isUpdatingFromCollaboration) {
+      sendContentUpdate(content, newTitle);
+    }
   };
+
   const handleContentChange = (newContent: string) => {
     setContent(newContent);
+
+    // Send real-time update for content changes
+    if (isWebSocketConnected && !isUpdatingFromCollaboration) {
+      sendContentUpdate(newContent, title);
+    }
   };
 
   if (error) {
@@ -135,6 +231,7 @@ export default function NotePage() {
   return (
     <PageTransition>
       <div className="flex flex-col h-full">
+        {" "}
         <SlideIn direction="down">
           <div className="flex items-center gap-4 px-4 mb-4">
             <HoverScale>
@@ -157,6 +254,15 @@ export default function NotePage() {
                 />
               </FadeIn>
             </div>
+
+            {/* Collaboration Indicator */}
+            <CollaborationIndicator
+              isConnected={isWebSocketConnected}
+              isConnecting={isWebSocketConnecting}
+              activeUsers={collaborationUsers}
+              currentUserId={user?.id}
+            />
+
             <HoverScale>
               <Button
                 variant="outline"

@@ -1,0 +1,28 @@
+{
+  "name": "ai-note-taker-websocket-functions",
+  "version": "1.0.0",
+  "description": "AWS Lambda functions for real-time collaboration WebSocket",
+  "main": "index.js",
+  "scripts": {
+    "clean": "rmdir /s /q dist 2>nul || rm -rf dist 2>/dev/null || true",
+    "build": "npm run clean && npm run build:connect && npm run build:disconnect && npm run build:message",
+    "build:connect": "tsc websocket-connect.ts --outDir dist/connect --target es2020 --module commonjs --declaration false && copy package.json dist\\connect\\ && cd dist\\connect && npm install --production",
+    "build:disconnect": "tsc websocket-disconnect.ts --outDir dist/disconnect --target es2020 --module commonjs --declaration false && copy package.json dist\\disconnect\\ && cd dist\\disconnect && npm install --production",
+    "build:message": "tsc websocket-message.ts --outDir dist/message --target es2020 --module commonjs --declaration false && copy package.json dist\\message\\ && cd dist\\message && npm install --production",
+    "zip": "powershell -Command \"if(Test-Path dist/connect) { Compress-Archive -Path dist/connect/* -DestinationPath connect.zip -Force }; if(Test-Path dist/disconnect) { Compress-Archive -Path dist/disconnect/* -DestinationPath disconnect.zip -Force }; if(Test-Path dist/message) { Compress-Archive -Path dist/message/* -DestinationPath message.zip -Force }\"",
+    "package": "npm run build && npm run zip",
+    "deploy": "powershell -ExecutionPolicy Bypass -File deploy.ps1 -Environment dev",
+    "deploy:prod": "powershell -ExecutionPolicy Bypass -File deploy.ps1 -Environment prod",
+    "deploy:staging": "powershell -ExecutionPolicy Bypass -File deploy.ps1 -Environment staging",
+    "get-url": "aws cloudformation describe-stacks --stack-name ai-note-taker-websocket-dev --query \"Stacks[0].Outputs[?OutputKey=='WebSocketURL'].OutputValue\" --output text --region us-east-1",
+    "get-url:prod": "aws cloudformation describe-stacks --stack-name ai-note-taker-websocket-prod --query \"Stacks[0].Outputs[?OutputKey=='WebSocketURL'].OutputValue\" --output text --region us-east-1"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.1691.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.149",
+    "@types/node": "^18.19.61",
+    "typescript": "^4.9.5"
+  }
+}
