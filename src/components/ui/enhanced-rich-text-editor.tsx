@@ -7,9 +7,6 @@ import { Color } from "@tiptap/extension-color";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import Highlight from "@tiptap/extension-highlight";
-import ListItem from "@tiptap/extension-list-item";
-import BulletList from "@tiptap/extension-bullet-list";
-import OrderedList from "@tiptap/extension-ordered-list";
 import TaskItem from "@tiptap/extension-task-item";
 import TaskList from "@tiptap/extension-task-list";
 import Link from "@tiptap/extension-link";
@@ -25,12 +22,10 @@ import {
   Italic,
   Underline as UnderlineIcon,
   Strikethrough,
-  Code,
   Highlighter,
   AlignLeft,
   AlignCenter,
   AlignRight,
-  AlignJustify,
   List,
   ListOrdered,
   CheckSquare,
@@ -40,12 +35,11 @@ import {
   Table as TableIcon,
   Undo,
   Redo,
-  Type,
   Palette,
   Save,
   Clock,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import {
   Select,
   SelectContent,
@@ -54,13 +48,11 @@ import {
   SelectValue,
 } from "./select";
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
-import { Input } from "./input";
 import { FontSize } from "./font-size-extension";
 
 interface RichTextEditorProps {
   content: string;
   onChange: (content: string) => void;
-  placeholder?: string;
   className?: string;
   isLoading?: boolean;
   lastSaved?: Date | null;
@@ -114,12 +106,10 @@ const HIGHLIGHT_COLORS = [
 export function RichTextEditor({
   content,
   onChange,
-  placeholder,
   className,
   isLoading = false,
   lastSaved,
 }: RichTextEditorProps) {
-  const [isBubbleMenuOpen, setIsBubbleMenuOpen] = useState(false);
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
@@ -170,9 +160,6 @@ export function RichTextEditor({
     },
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
-    },
-    onSelectionUpdate: () => {
-      setIsBubbleMenuOpen(true);
     },
   });
 

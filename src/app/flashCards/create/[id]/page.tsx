@@ -14,7 +14,6 @@ import {
   HoverScale,
   StaggerContainer,
   StaggerItem,
-  LoadingAnimation,
 } from "@/components/ui/motion";
 
 interface FlashCard {
@@ -42,9 +41,7 @@ export default function CreateFlashCardsPage() {
         const formattedCards = generatedCards.map((card) => ({
           question: card.front,
           answer: card.back,
-        }));
-
-        setFlashcards(formattedCards);
+        }));        setFlashcards(formattedCards);
       } catch (error) {
         console.error("Error generating flashcards:", error);
       } finally {
@@ -53,7 +50,7 @@ export default function CreateFlashCardsPage() {
     };
 
     generateCards();
-  }, [id]);
+  }, [id, router]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -81,13 +78,12 @@ export default function CreateFlashCardsPage() {
     updatedCards[index] = { ...updatedCards[index], [field]: value };
     setFlashcards(updatedCards);
   };
-
   if (isGenerating) {
     return (
       <PageTransition>
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center space-y-4">
-            <LoadingAnimation />
+            <Loader2 className="h-8 w-8 animate-spin mx-auto" />
             <SlideIn direction="up">
               <div>
                 <h2 className="text-xl font-semibold mb-2">

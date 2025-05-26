@@ -32,7 +32,6 @@ export default function NotePage() {
   const [error, setError] = useState<string | null>(null);
   const [shouldSave, setShouldSave] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [collaborationUsers, setCollaborationUsers] = useState<
     CollaborationUser[]
   >([]);
@@ -48,12 +47,10 @@ export default function NotePage() {
   const websocketUrl =
     process.env.NEXT_PUBLIC_WEBSOCKET_URL ||
     "wss://457dfe2wil.execute-api.us-east-2.amazonaws.com/dev";
-
   const {
     isConnected: isWebSocketConnected,
     isConnecting: isWebSocketConnecting,
     sendContentUpdate,
-    activeUsers,
   } = useWebSocket({
     url: websocketUrl,
     userId: user?.id,
@@ -144,12 +141,10 @@ export default function NotePage() {
     if (!user?.id || !noteId || isSaving) {
       return;
     }
-
     setIsSaving(true);
     try {
       console.log("Updating note:", { noteId, title, content });
       await updateExistingNote(noteId, title, content);
-      setLastSaved(new Date());
     } catch (error) {
       console.error("Error saving note:", error);
     } finally {
@@ -287,7 +282,6 @@ export default function NotePage() {
           <RichTextEditor
             content={content}
             onChange={handleContentChange}
-            placeholder="Start typing your notes here..."
             className="min-h-[calc(100vh-200px)] w-full"
           />
         </FadeIn>

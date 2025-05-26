@@ -9,13 +9,13 @@ import { usePathname, useRouter } from "next/navigation";
 import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  SlideIn,
   StaggerContainer,
   StaggerItem,
   HoverScale,
   FadeIn,
 } from "@/components/ui/motion";
 import { useState, useEffect } from "react";
+import Image from "next/image";
 
 interface SidebarProps {
   className?: string;
@@ -121,18 +121,20 @@ function SidebarContent() {
     <ScrollArea className="h-full py-6">
       <div className="px-3 py-2">
         <FadeIn delay={0.2}>
+          {" "}
           <div className="flex items-center gap-2">
-            <img
+            <Image
               src="/logo.png"
               alt="Flash Learn Logo"
+              width={64}
+              height={64}
               className="h-16 w-auto"
             />
             <h2 className="mb-2 pr-4 text-xl font-semibold">Flash Learn</h2>
           </div>
-        </FadeIn>
-
+        </FadeIn>{" "}
         <StaggerContainer className="space-y-1">
-          {navigationItems.map((item, index) => {
+          {navigationItems.map((item) => {
             const Icon = item.icon;
             return (
               <StaggerItem key={item.href}>

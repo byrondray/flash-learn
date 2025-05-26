@@ -217,9 +217,9 @@ export default function TestResultsPage() {
                       </TableHead>
                       <TableHead className="text-right">Action</TableHead>
                     </TableRow>
-                  </TableHeader>
+                  </TableHeader>{" "}
                   <TableBody>
-                    {sortedScores.map((score, index) => (
+                    {sortedScores.map((score) => (
                       <StaggerItem key={score.testScores.id}>
                         <TableRow>
                           <TableCell className="font-medium">

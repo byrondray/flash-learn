@@ -56,12 +56,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Input } from "./input";
 
 interface RichTextEditorProps {
   content: string;
   onChange: (content: string) => void;
-  placeholder?: string;
   className?: string;
 }
 
@@ -113,7 +111,6 @@ const HIGHLIGHT_COLORS = [
 export function RichTextEditor({
   content,
   onChange,
-  placeholder,
   className,
 }: RichTextEditorProps) {
   const editor = useEditor({

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 
 export interface WebSocketMessage {
   type: string;
+  action?: string;
   userId?: string;
   noteId?: string;
   content?: string;
@@ -10,6 +11,7 @@ export interface WebSocketMessage {
   operation?: "insert" | "delete" | "replace";
   length?: number;
   timestamp: number;
+  data?: Record<string, unknown>;
   // Add error-related fields
   message?: string;
   connectionId?: string;
@@ -33,7 +35,7 @@ export interface UseWebSocketOptions {
 export interface UseWebSocketReturn {
   isConnected: boolean;
   isConnecting: boolean;
-  sendMessage: (message: any) => void;
+  sendMessage: (message: WebSocketMessage) => void;
   sendContentUpdate: (content: string, title?: string) => void;
   sendCursorUpdate: (position: number) => void;
   connect: () => void;
@@ -275,19 +277,19 @@ export function useWebSocket({
     setConnectionId(null);
     setActiveUsers(new Set());
   }, []);
-
-  const sendMessage = useCallback((message: any) => {
+  const sendMessage = useCallback((message: WebSocketMessage) => {
     console.log("useWebSocket.sendMessage with message:", message);
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify(message));
     } else {
       console.warn("WebSocket is not connected. Message not sent:", message);
     }
-  }, []);
+  }, []); // Empty dependencies since this doesn't depend on external state
   const sendContentUpdate = useCallback(
     (content: string, title?: string) => {
       console.log("useWebSocket.sendContentUpdate with:", { content, title });
       sendMessage({
+        type: "content_update",
         action: "content_update",
         noteId: noteIdRef.current,
         userId: userIdRef.current,
@@ -306,6 +308,7 @@ export function useWebSocket({
     (position: number) => {
       console.log("useWebSocket.sendCursorUpdate with position:", position);
       sendMessage({
+        type: "cursor_update",
         action: "cursor_update",
         noteId: noteIdRef.current,
         userId: userIdRef.current,
