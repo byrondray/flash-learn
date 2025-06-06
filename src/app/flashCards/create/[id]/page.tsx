@@ -3,13 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { generateFlashcardsAction, saveFlashCards } from "./actions";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -31,7 +25,6 @@ import {
   HoverScale,
   StaggerContainer,
   StaggerItem,
-  ScaleIn,
 } from "@/components/ui/motion";
 import { motion, AnimatePresence } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
@@ -420,8 +413,8 @@ export default function CreateFlashCardsPage() {
                       No flashcards generated
                     </h3>
                     <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                      We couldn't generate flashcards from your note. Please
-                      ensure your note has enough content for flashcard
+                      We couldn&apos;t generate flashcards from your note.
+                      Please ensure your note has enough content for flashcard
                       creation.
                     </p>
                   </div>

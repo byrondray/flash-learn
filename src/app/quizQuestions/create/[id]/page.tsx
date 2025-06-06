@@ -3,13 +3,7 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { generateQuizQuestionsAction, saveQuizQuestions } from "./actionts";
@@ -265,8 +259,8 @@ export default function CreateQuiz() {
                       Ready to create a quiz?
                     </h3>
                     <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                      Click "Generate Questions" to create AI-powered quiz
-                      questions based on your notes
+                      Click &quot;Generate Questions&quot; to create AI-powered
+                      quiz questions based on your notes
                     </p>
                   </div>
                 </div>
