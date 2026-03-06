@@ -31,6 +31,15 @@ export async function updateNote(
     .returning();
 }
 
+export async function updateNoteTitle(noteId: string, title: string) {
+  const lastUpdated = new Date().toISOString();
+  return await db
+    .update(notes)
+    .set({ title, lastUpdated })
+    .where(eq(notes.id, noteId))
+    .returning();
+}
+
 export async function deleteNote(noteId: string) {
   return await db.delete(notes).where(eq(notes.id, noteId));
 }

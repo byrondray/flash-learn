@@ -5,7 +5,7 @@ import { useDebounce } from "use-debounce";
 import { RichTextEditor } from "@/components/ui/enhanced-rich-text-editor";
 import { Input } from "@/components/ui/input";
 import { useParams, useRouter } from "next/navigation";
-import { updateExistingNote, fetchNote } from "./actions";
+import { updateExistingNoteTitle, fetchNote } from "./actions";
 import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
 import { Button } from "@/components/ui/button";
 import { FileText, Brain, Loader2, ArrowLeft } from "lucide-react";
@@ -72,7 +72,7 @@ export default function NotePage() {
     if (!user?.id || !noteId || isSaving) return;
     setIsSaving(true);
     try {
-      await updateExistingNote(noteId, title, "");
+      await updateExistingNoteTitle(noteId, title);
     } catch (err) {
       console.error("Error saving title:", err);
     } finally {

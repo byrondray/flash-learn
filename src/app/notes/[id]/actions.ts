@@ -1,6 +1,10 @@
 "use server";
 
-import { updateNote, getNoteById } from "@/services/note.service";
+import {
+  updateNote,
+  updateNoteTitle,
+  getNoteById,
+} from "@/services/note.service";
 
 export async function updateExistingNote(
   noteId: string,
@@ -9,6 +13,10 @@ export async function updateExistingNote(
 ) {
   console.log("Server action: Updating note", { noteId, title, content });
   return await updateNote(noteId, title, content);
+}
+
+export async function updateExistingNoteTitle(noteId: string, title: string) {
+  return await updateNoteTitle(noteId, title);
 }
 
 export async function fetchNote(noteId: string) {
