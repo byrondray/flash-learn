@@ -1,7 +1,7 @@
 "use server";
 
-import { getNoteById } from "@/services/note.service";
 import { getTestScoresForUser } from "@/services/testScores.service";
+import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 
 interface ProcessedTestScore {
   testScores: {
@@ -15,32 +15,24 @@ interface ProcessedTestScore {
   };
 }
 
-export async function fetchUserTestScores(userId: string) {
-  const scores = await getTestScoresForUser(userId);
+export async function fetchUserTestScores() {
+  const { getUser } = getKindeServerSession();
+  const user = await getUser();
+  if (!user?.id) throw new Error("Unauthorized");
 
-  const processedScores: ProcessedTestScore[] = [];
+  const scores = await getTestScoresForUser(user.id);
 
-  for (const score of scores) {
-    try {
-      const note = await getNoteById(score.notes.id);
-
-      if (note) {
-        processedScores.push({
-          testScores: {
-            id: score.testScores.id,
-            score: score.testScores.score,
-            dateAttempted: score.testScores.dateAttempted,
-          },
-          notes: {
-            id: note.notes.id,
-            title: note.notes.title,
-          },
-        });
-      }
-    } catch (error) {
-      console.error("Error processing score:", error);
-    }
-  }
+  const processedScores: ProcessedTestScore[] = scores.map((score) => ({
+    testScores: {
+      id: score.testScores.id,
+      score: score.testScores.score,
+      dateAttempted: score.testScores.dateAttempted,
+    },
+    notes: {
+      id: score.notes.id,
+      title: score.notes.title,
+    },
+  }));
 
   return processedScores.sort((a, b) => {
     const dateA = new Date(a.testScores.dateAttempted).getTime();

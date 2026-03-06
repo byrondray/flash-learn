@@ -1,6 +1,7 @@
 "use server";
 
 import { getQuizQuestionsAndOptionsForUser } from "@/services/questions.service";
+import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 
 interface Note {
   id: string;
@@ -17,10 +18,11 @@ interface GroupedNote {
   questionCount: number;
 }
 
-export async function fetchAvailableQuizzes(
-  userId: string
-): Promise<GroupedNote[]> {
-  const quizData: QuizData[] = await getQuizQuestionsAndOptionsForUser(userId);
+export async function fetchAvailableQuizzes(): Promise<GroupedNote[]> {
+  const { getUser } = getKindeServerSession();
+  const user = await getUser();
+  if (!user?.id) throw new Error("Unauthorized");
+  const quizData: QuizData[] = await getQuizQuestionsAndOptionsForUser(user.id);
 
   const groupedByNote: Record<string, GroupedNote> = quizData.reduce(
     (acc, curr) => {

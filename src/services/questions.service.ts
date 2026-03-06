@@ -100,6 +100,8 @@ export async function getQuizQuestionsForNoteId(noteId: string) {
     .from(quizQuestions)
     .where(eq(quizQuestions.noteId, noteId));
 
+  if (questions.length === 0) return [];
+
   const questionIds = questions.map((q) => q.id);
   const options = await db
     .select()
@@ -118,6 +120,8 @@ export async function getQuizQuestionsAndOptionsForUser(userId: string) {
     .from(quizQuestions)
     .innerJoin(notes, eq(quizQuestions.noteId, notes.id))
     .where(eq(notes.userId, userId));
+
+  if (questions.length === 0) return [];
 
   const questionIds = questions.map((q) => q.quizQuestions.id);
   const options = await db

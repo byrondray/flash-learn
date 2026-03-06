@@ -1,11 +1,12 @@
 "use server";
 
-import { getNoteById } from "@/services/note.service";
+import { getNoteByIdForUser } from "@/services/note.service";
 import {
   createQuizQuestion,
   getQuizQuestionsForNoteId,
 } from "@/services/questions.service";
 import { generateUniqueQuestions } from "@/utils/createAiQuestions";
+import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { unstable_noStore as noStore } from "next/cache";
 
 interface GeneratedQuestion {
@@ -18,9 +19,13 @@ interface GeneratedQuestion {
 export async function generateQuizQuestionsAction(
   noteId: string
 ): Promise<GeneratedQuestion[]> {
-  noStore();
-  const note = await getNoteById(noteId);
+  const { getUser } = getKindeServerSession();
+  const user = await getUser();
+  if (!user?.id) throw new Error("Unauthorized");
 
+  noStore();
+
+  const note = await getNoteByIdForUser(noteId, user.id);
   if (!note) {
     throw new Error("Note not found");
   }
@@ -37,21 +42,17 @@ export async function saveQuizQuestions(
   noteId: string,
   questions: GeneratedQuestion[]
 ) {
-  try {
-    const savedQuestions = await Promise.all(
-      questions.map((question) =>
-        createQuizQuestion(
-          noteId,
-          question.question,
-          question.options,
-          question.correctAnswer,
-          question.explanation
-        )
+  const savedQuestions = await Promise.all(
+    questions.map((question) =>
+      createQuizQuestion(
+        noteId,
+        question.question,
+        question.options,
+        question.correctAnswer,
+        question.explanation
       )
-    );
-    return savedQuestions;
-  } catch (error) {
-    console.error("Error saving quiz questions:", error);
-    throw error;
+    )
+  );
+  return savedQuestions;
   }
 }

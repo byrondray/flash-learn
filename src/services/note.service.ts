@@ -83,21 +83,10 @@ export async function getNotesForUserEditedThisWeek(userId: string) {
     .orderBy(desc(notes.lastUpdated));
 }
 
-export const getNotesForUserEditedThisWeek = async (userId: string) => {
-  const allNotes = await db
+export async function getNoteByIdForUser(noteId: string, userId: string) {
+  const r = await db
     .select({ notes })
     .from(notes)
-    .where(eq(notes.userId, userId));
-
-  const oneWeekAgo = new Date();
-  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-
-  const recentNotes = allNotes.filter((note) => {
-    const editDate = note.notes.lastUpdated
-      ? new Date(note.notes.lastUpdated)
-      : new Date(0);
-    return editDate >= oneWeekAgo;
-  });
-
-  return recentNotes;
-};
+    .where(and(eq(notes.id, noteId), eq(notes.userId, userId)));
+  return r[0] ?? null;
+}

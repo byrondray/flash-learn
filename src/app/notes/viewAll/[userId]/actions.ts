@@ -1,9 +1,13 @@
 "use server";
 
 import { getNotesForUser } from "@/services/note.service";
+import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 
-export async function fetchUserNotes(userId: string) {
-  const notes = await getNotesForUser(userId);
+export async function fetchUserNotes() {
+  const { getUser } = getKindeServerSession();
+  const user = await getUser();
+  if (!user?.id) throw new Error("Unauthorized");
+  const notes = await getNotesForUser(user.id);
 
   return notes.sort((a, b) => {
     const dateA = a.notes.lastUpdated

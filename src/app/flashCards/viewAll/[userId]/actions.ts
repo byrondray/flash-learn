@@ -1,6 +1,7 @@
 "use server";
 
 import { getFlashCardsForUser } from "@/services/cards.service";
+import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 
 interface FlashCard {
   noteId: string;
@@ -23,10 +24,11 @@ interface GroupedNote {
   flashcardCount: number;
 }
 
-export async function fetchUserFlashcards(
-  userId: string
-): Promise<GroupedNote[]> {
-  const flashcards: FlashCardData[] = await getFlashCardsForUser(userId);
+export async function fetchUserFlashcards(): Promise<GroupedNote[]> {
+  const { getUser } = getKindeServerSession();
+  const user = await getUser();
+  if (!user?.id) throw new Error("Unauthorized");
+  const flashcards: FlashCardData[] = await getFlashCardsForUser(user.id);
 
   const groupedByNote: Record<string, GroupedNote> = flashcards.reduce(
     (acc, curr) => {
