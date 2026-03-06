@@ -56,11 +56,19 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import Collaboration from "@tiptap/extension-collaboration";
+import CollaborationCursor from "@tiptap/extension-collaboration-cursor";
+import type { HocuspocusProvider } from "@hocuspocus/provider";
+import type { Doc as YDoc } from "yjs";
 
 interface RichTextEditorProps {
   content: string;
   onChange: (content: string) => void;
   className?: string;
+  ydoc?: YDoc;
+  provider?: HocuspocusProvider | null;
+  userName?: string;
+  userColor?: string;
 }
 
 const FONT_SIZES = [
@@ -108,14 +116,13 @@ const HIGHLIGHT_COLORS = [
   "#ff6347",
 ];
 
-export function RichTextEditor({
-  content,
-  onChange,
-  className,
-}: RichTextEditorProps) {
+export function RichTextEditor(props: RichTextEditorProps) {
+  const isCollab = !!props.ydoc;
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
+        history: isCollab ? false : undefined,
         bulletList: {
           keepMarks: true,
           keepAttributes: false,
@@ -125,6 +132,22 @@ export function RichTextEditor({
           keepAttributes: false,
         },
       }),
+      ...(props.ydoc
+        ? [
+            Collaboration.configure({ document: props.ydoc }),
+            ...(props.provider
+              ? [
+                  CollaborationCursor.configure({
+                    provider: props.provider,
+                    user: {
+                      name: props.userName || "Anonymous",
+                      color: props.userColor || "#ff6b6b",
+                    },
+                  }),
+                ]
+              : []),
+          ]
+        : []),
       TextStyle,
       FontSize,
       Color,
@@ -156,7 +179,7 @@ export function RichTextEditor({
       TableCell,
       CharacterCount,
     ],
-    content,
+    content: isCollab ? undefined : props.content,
     editorProps: {
       attributes: {
         class:
@@ -164,15 +187,17 @@ export function RichTextEditor({
       },
     },
     onUpdate: ({ editor }) => {
-      onChange(editor.getHTML());
+      if (!isCollab) {
+        props.onChange(editor.getHTML());
+      }
     },
   });
 
   useEffect(() => {
-    if (editor && content !== editor.getHTML()) {
-      editor.commands.setContent(content);
+    if (!isCollab && editor && props.content !== editor.getHTML()) {
+      editor.commands.setContent(props.content);
     }
-  }, [content, editor]);
+  }, [props.content, editor, isCollab]);
 
   const setLink = useCallback(() => {
     if (!editor) return;
@@ -206,7 +231,7 @@ export function RichTextEditor({
   }
 
   return (
-    <div className={`border rounded-lg ${className}`}>
+    <div className={`border rounded-lg ${props.className}`}>
       {/* Toolbar */}
       <div className="border-b p-2 flex flex-wrap items-center gap-1">
         {/* Undo/Redo */}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useDebounce } from "use-debounce";
 import { RichTextEditor } from "@/components/ui/enhanced-rich-text-editor";
 import { Input } from "@/components/ui/input";
@@ -15,11 +15,7 @@ import {
   FadeIn,
   HoverScale,
 } from "@/components/ui/motion";
-import { useWebSocket } from "@/hooks/useWebSocket";
-import {
-  CollaborationService,
-  CollaborationUser,
-} from "@/services/collaboration.service";
+import { useCollaboration } from "@/hooks/useCollaboration";
 import { CollaborationIndicator } from "@/components/ui/collaboration-indicator";
 
 export default function NotePage() {
@@ -27,88 +23,24 @@ export default function NotePage() {
   const router = useRouter();
   const { user } = useKindeBrowserClient();
   const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [shouldSave, setShouldSave] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [collaborationUsers, setCollaborationUsers] = useState<
-    CollaborationUser[]
-  >([]);
-  const [isUpdatingFromCollaboration, setIsUpdatingFromCollaboration] =
-    useState(false);
 
   const noteId = Array.isArray(id) ? id[0] : id;
-  const collaborationServiceRef = useRef<CollaborationService | null>(null);
 
   const [debouncedTitle] = useDebounce(title, 2000);
-  const [debouncedContent] = useDebounce(content, 2000);
-  // WebSocket connection for real-time collaboration
-  const websocketUrl =
-    process.env.NEXT_PUBLIC_WEBSOCKET_URL ||
-    "wss://457dfe2wil.execute-api.us-east-2.amazonaws.com/dev";
-  const {
-    isConnected: isWebSocketConnected,
-    isConnecting: isWebSocketConnecting,
-    sendContentUpdate,
-  } = useWebSocket({
-    url: websocketUrl,
-    userId: user?.id,
-    noteId: noteId,
-    onMessage: (message) => {
-      collaborationServiceRef.current?.processMessage(message);
-    },
-    onUserJoined: (userId) => {
-      console.log("User joined:", userId);
-    },
-    onUserLeft: (userId) => {
-      console.log("User left:", userId);
-    },
-    onConnect: () => {
-      console.log("Connected to collaboration server");
-    },
-    onDisconnect: () => {
-      console.log("Disconnected from collaboration server");
-    },
-    onError: (error) => {
-      console.error("WebSocket error:", error);
-    },
-  });
 
-  // Initialize collaboration service
-  useEffect(() => {
-    if (!collaborationServiceRef.current) {
-      collaborationServiceRef.current = new CollaborationService(
-        // onUsersUpdate
-        (users) => {
-          setCollaborationUsers(users);
-        },
-        // onContentUpdate
-        (newContent, newTitle) => {
-          setIsUpdatingFromCollaboration(true);
-          if (newContent !== undefined) {
-            setContent(newContent);
-          }
-          if (newTitle !== undefined) {
-            setTitle(newTitle);
-          }
-          // Don't trigger save for collaborative updates
-          setTimeout(() => {
-            setIsUpdatingFromCollaboration(false);
-          }, 100);
-        },
-        // onCursorUpdate
-        (userId, position) => {
-          console.log("Cursor update:", userId, position);
-          // Handle cursor updates if needed
-        }
-      );
-    }
+  const collabUrl =
+    process.env.NEXT_PUBLIC_COLLAB_URL || "ws://localhost:8080";
 
-    return () => {
-      collaborationServiceRef.current?.destroy();
-    };
-  }, []);
+  const { ydoc, provider, isConnected, isSynced, activeUsers, userColor } =
+    useCollaboration({
+      noteId,
+      userId: user?.id,
+      userName: user?.given_name || user?.email || undefined,
+      collabUrl,
+    });
 
   useEffect(() => {
     async function loadNote() {
@@ -120,15 +52,13 @@ export default function NotePage() {
 
       try {
         const note = await fetchNote(noteId);
-        console.log("Fetched note:", note);
         if (note) {
           setTitle(note.notes.title || "");
-          setContent(note.notes.content || "");
         } else {
           setError("Note not found");
         }
-      } catch (error) {
-        console.error("Error loading note:", error);
+      } catch (err) {
+        console.error("Error loading note:", err);
         setError("Failed to load note");
       } finally {
         setIsLoading(false);
@@ -137,56 +67,27 @@ export default function NotePage() {
 
     loadNote();
   }, [noteId]);
-  const handleSave = useCallback(async () => {
-    if (!user?.id || !noteId || isSaving) {
-      return;
-    }
+
+  const handleTitleSave = useCallback(async () => {
+    if (!user?.id || !noteId || isSaving) return;
     setIsSaving(true);
     try {
-      console.log("Updating note:", { noteId, title, content });
-      await updateExistingNote(noteId, title, content);
-    } catch (error) {
-      console.error("Error saving note:", error);
+      await updateExistingNote(noteId, title, "");
+    } catch (err) {
+      console.error("Error saving title:", err);
     } finally {
       setIsSaving(false);
     }
-  }, [user?.id, noteId, title, content, isSaving]);
-  useEffect(() => {
-    if (!isLoading && !isUpdatingFromCollaboration) {
-      setShouldSave(true);
-    }
-  }, [
-    debouncedTitle,
-    debouncedContent,
-    isLoading,
-    isUpdatingFromCollaboration,
-  ]);
+  }, [user?.id, noteId, title, isSaving]);
 
   useEffect(() => {
-    if (shouldSave && !isLoading && !isUpdatingFromCollaboration) {
-      console.log("Triggering save...");
-      handleSave();
-      setShouldSave(false);
+    if (!isLoading && debouncedTitle) {
+      handleTitleSave();
     }
-  }, [shouldSave, isLoading, isUpdatingFromCollaboration, handleSave]);
+  }, [debouncedTitle, isLoading, handleTitleSave]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newTitle = e.target.value;
-    setTitle(newTitle);
-
-    // Send real-time update for title changes
-    if (isWebSocketConnected && !isUpdatingFromCollaboration) {
-      sendContentUpdate(content, newTitle);
-    }
-  };
-
-  const handleContentChange = (newContent: string) => {
-    setContent(newContent);
-
-    // Send real-time update for content changes
-    if (isWebSocketConnected && !isUpdatingFromCollaboration) {
-      sendContentUpdate(newContent, title);
-    }
+    setTitle(e.target.value);
   };
 
   if (error) {
@@ -250,11 +151,10 @@ export default function NotePage() {
               </FadeIn>
             </div>
 
-            {/* Collaboration Indicator */}
             <CollaborationIndicator
-              isConnected={isWebSocketConnected}
-              isConnecting={isWebSocketConnecting}
-              activeUsers={collaborationUsers}
+              isConnected={isConnected}
+              isSynced={isSynced}
+              activeUsers={activeUsers}
               currentUserId={user?.id}
             />
 
@@ -280,8 +180,12 @@ export default function NotePage() {
         </SlideIn>{" "}
         <FadeIn delay={0.2} className="flex-1 px-4">
           <RichTextEditor
-            content={content}
-            onChange={handleContentChange}
+            content=""
+            onChange={() => {}}
+            ydoc={ydoc}
+            provider={provider}
+            userName={user?.given_name || user?.email || undefined}
+            userColor={userColor}
             className="min-h-[calc(100vh-200px)] w-full"
           />
         </FadeIn>
