@@ -45,7 +45,7 @@ export default function AvailableQuizzesPage() {
     async function loadQuizzes() {
       if (!user?.id) return;
       try {
-        const data = await fetchAvailableQuizzes(user.id);
+        const data = await fetchAvailableQuizzes();
         setQuizzes(data);
       } catch (error) {
         console.error("Error loading quizzes:", error);

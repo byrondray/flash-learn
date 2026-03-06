@@ -46,7 +46,7 @@ export default function NotesOverviewPage() {
     async function loadNotes() {
       if (!user?.id) return;
       try {
-        const data = await fetchUserNotes(user.id);
+        const data = await fetchUserNotes();
         setNotes(data);
       } catch (error) {
         console.error("Error loading notes:", error);

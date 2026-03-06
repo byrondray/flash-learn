@@ -1,6 +1,10 @@
 "use server";
 
-import { createNote, updateNote, getNoteById } from "@/services/note.service";
+import {
+  createNote,
+  updateNote,
+  getNoteByIdForUser,
+} from "@/services/note.service";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 
 export async function saveNote(title: string, content: string) {
@@ -22,5 +26,8 @@ export async function updateExistingNote(
 }
 
 export async function fetchNote(noteId: string) {
-  return await getNoteById(noteId);
+  const { getUser } = getKindeServerSession();
+  const user = await getUser();
+  if (!user?.id) throw new Error("Unauthorized");
+  return await getNoteByIdForUser(noteId, user.id);
 }

@@ -42,7 +42,7 @@ export default function FlashcardsOverviewPage() {
     async function loadFlashcardSets() {
       if (!user?.id) return;
       try {
-        const data = await fetchUserFlashcards(user.id);
+        const data = await fetchUserFlashcards();
         setFlashcardSets(data);
       } catch (error) {
         console.error("Error loading flashcard sets:", error);

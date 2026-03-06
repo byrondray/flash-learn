@@ -32,7 +32,7 @@ export default function NewNotePage() {
         console.log("Creating new note for user:", user.id);
 
         // Create a new empty note
-        const [newNote] = await saveNote(user.id, "", "");
+        const [newNote] = await saveNote("", "");
 
         if (newNote?.id) {
           console.log("New note created with ID:", newNote.id);

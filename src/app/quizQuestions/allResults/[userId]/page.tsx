@@ -56,7 +56,7 @@ export default function TestResultsPage() {
     async function loadScores() {
       if (!user?.id) return;
       try {
-        const fetchedScores = await fetchUserTestScores(user.id);
+        const fetchedScores = await fetchUserTestScores();
         setScores(fetchedScores as TestScore[]);
       } catch (error) {
         console.error("Error loading test scores:", error);

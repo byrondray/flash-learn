@@ -72,52 +72,59 @@ const server = Server.configure({
       async fetch(data) {
         const { documentName } = data;
 
-        const result = await db.execute({
-          sql: "SELECT yjsState, content FROM notes WHERE id = ?",
-          args: [documentName],
-        });
+        try {
+          const result = await db.execute({
+            sql: "SELECT yjsState, content FROM notes WHERE id = ?",
+            args: [documentName],
+          });
 
-        const row = result.rows[0];
-        if (!row) return null;
+          const row = result.rows[0];
+          if (!row) return null;
 
-        if (row.yjsState) {
-          const raw = row.yjsState;
-          if (raw instanceof ArrayBuffer) {
-            return new Uint8Array(raw);
+          if (row.yjsState) {
+            const raw = row.yjsState;
+            if (raw instanceof ArrayBuffer) {
+              return new Uint8Array(raw);
+            }
+            return null;
           }
+
+          const htmlContent = (row.content as string) || "";
+          if (!htmlContent) return null;
+
+          const ydoc = TiptapTransformer.toYdoc(
+            htmlContent,
+            "default",
+            tiptapExtensions
+          );
+          const state = Y.encodeStateAsUpdate(ydoc);
+          ydoc.destroy();
+
+          return state;
+        } catch (error) {
+          console.error(`Failed to fetch document ${documentName}:`, error);
           return null;
         }
-
-        // Legacy note — convert HTML content to Yjs state
-        const htmlContent = (row.content as string) || "";
-        if (!htmlContent) return null;
-
-        const ydoc = TiptapTransformer.toYdoc(
-          htmlContent,
-          "default",
-          tiptapExtensions
-        );
-        const state = Y.encodeStateAsUpdate(ydoc);
-        ydoc.destroy();
-
-        return state;
       },
 
       async store(data) {
         const { documentName, state } = data;
 
-        // Convert Yjs state back to HTML for search/preview/AI features
-        const ydoc = new Y.Doc();
-        Y.applyUpdate(ydoc, state);
-        const html = TiptapTransformer.fromYdoc(ydoc, "default");
-        ydoc.destroy();
+        try {
+          const ydoc = new Y.Doc();
+          Y.applyUpdate(ydoc, state);
+          const html = TiptapTransformer.fromYdoc(ydoc, "default");
+          ydoc.destroy();
 
-        const lastUpdated = new Date().toISOString();
+          const lastUpdated = new Date().toISOString();
 
-        await db.execute({
-          sql: "UPDATE notes SET yjsState = ?, content = ?, lastUpdated = ? WHERE id = ?",
-          args: [Buffer.from(state), html, lastUpdated, documentName],
-        });
+          await db.execute({
+            sql: "UPDATE notes SET yjsState = ?, content = ?, lastUpdated = ? WHERE id = ?",
+            args: [Buffer.from(state), html, lastUpdated, documentName],
+          });
+        } catch (error) {
+          console.error(`Failed to store document ${documentName}:`, error);
+        }
       },
     }),
   ],
