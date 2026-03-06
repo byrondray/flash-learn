@@ -54,5 +54,4 @@ export async function saveQuizQuestions(
     )
   );
   return savedQuestions;
-  }
 }
