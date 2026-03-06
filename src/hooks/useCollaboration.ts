@@ -89,13 +89,7 @@ export function useCollaboration(props: {
       provider.destroy();
       providerRef.current = null;
     };
-  }, [
-    props.noteId,
-    props.userId,
-    props.userName,
-    props.collabUrl,
-    userColor,
-  ]);
+  }, [props.noteId, props.userId, props.userName, props.collabUrl, userColor]);
 
   return {
     ydoc,

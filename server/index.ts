@@ -81,8 +81,11 @@ const server = Server.configure({
         if (!row) return null;
 
         if (row.yjsState) {
-          const buffer = row.yjsState as ArrayBuffer;
-          return new Uint8Array(buffer);
+          const raw = row.yjsState;
+          if (raw instanceof ArrayBuffer) {
+            return new Uint8Array(raw);
+          }
+          return null;
         }
 
         // Legacy note — convert HTML content to Yjs state

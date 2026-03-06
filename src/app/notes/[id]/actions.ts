@@ -4,22 +4,35 @@ import {
   updateNote,
   updateNoteTitle,
   getNoteById,
+  deleteNote,
 } from "@/services/note.service";
+import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 
 export async function updateExistingNote(
   noteId: string,
   title: string,
   content: string
 ) {
-  console.log("Server action: Updating note", { noteId, title, content });
-  return await updateNote(noteId, title, content);
+  const { getUser } = getKindeServerSession();
+  const user = await getUser();
+  if (!user?.id) throw new Error("Unauthorized");
+  return await updateNote(noteId, user.id, title, content);
 }
 
 export async function updateExistingNoteTitle(noteId: string, title: string) {
-  return await updateNoteTitle(noteId, title);
+  const { getUser } = getKindeServerSession();
+  const user = await getUser();
+  if (!user?.id) throw new Error("Unauthorized");
+  return await updateNoteTitle(noteId, user.id, title);
+}
+
+export async function deleteExistingNote(noteId: string) {
+  const { getUser } = getKindeServerSession();
+  const user = await getUser();
+  if (!user?.id) throw new Error("Unauthorized");
+  return await deleteNote(noteId, user.id);
 }
 
 export async function fetchNote(noteId: string) {
-  console.log("Server action: Fetching note", { noteId });
   return await getNoteById(noteId);
 }
