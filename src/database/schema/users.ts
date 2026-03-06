@@ -1,9 +1,9 @@
 // docs: https://orm.drizzle.team/docs/sql-schema-declaration
-import { sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text } from "drizzle-orm/sqlite-core";
 
-export const users = sqliteTable('users', {
-  id: text('id').primaryKey().notNull(),
-  email: text('email').notNull(),
+export const users = sqliteTable("users", {
+  id: text("id").primaryKey().notNull(),
+  email: text("email").notNull().unique(),
 });
 
 export type User = typeof users.$inferSelect;

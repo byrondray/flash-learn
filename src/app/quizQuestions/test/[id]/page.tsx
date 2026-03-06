@@ -178,7 +178,7 @@ export default function TestPage() {
                     <Progress value={score} className="w-full" />
                   </motion.div>
                 </CardContent>
-                <CardFooter className="flex justify-end space-x-4">
+                <CardFooter className="flex justify-end gap-4">
                   <HoverScale>
                     <Button
                       variant="outline"
@@ -261,7 +261,7 @@ export default function TestPage() {
                       {currentQ.options.map((option, index) => (
                         <motion.div
                           key={option.id}
-                          className="flex items-center space-x-2"
+                          className="flex items-center gap-2"
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.1 * index }}

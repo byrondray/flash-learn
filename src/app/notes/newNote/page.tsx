@@ -91,9 +91,9 @@ export default function NewNotePage() {
               <p className="text-sm text-muted-foreground max-w-md">
                 Setting up your new note editor with auto-save functionality
               </p>
-              <div className="flex items-center justify-center space-x-1 text-xs text-muted-foreground">
+              <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
                 <span>This will only take a moment</span>
-                <div className="flex space-x-1">
+                <div className="flex gap-1">
                   <div
                     className="w-1 h-1 bg-current rounded-full animate-bounce"
                     style={{ animationDelay: "0s" }}

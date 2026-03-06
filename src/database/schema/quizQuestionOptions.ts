@@ -1,11 +1,17 @@
-import { sqliteTable } from "drizzle-orm/sqlite-core";
+import { sqliteTable, index } from "drizzle-orm/sqlite-core";
 import { text } from "drizzle-orm/sqlite-core";
 import { quizQuestions } from "./quizQuestions";
 
-export const questionOptions = sqliteTable("questionOptions", {
-  id: text("id").primaryKey().notNull(),
-  questionId: text("questionId")
-    .notNull()
-    .references(() => quizQuestions.id, { onDelete: "cascade" }),
-  optionText: text("optionText").notNull(),
-});
+export const questionOptions = sqliteTable(
+  "questionOptions",
+  {
+    id: text("id").primaryKey().notNull(),
+    questionId: text("questionId")
+      .notNull()
+      .references(() => quizQuestions.id, { onDelete: "cascade" }),
+    optionText: text("optionText").notNull(),
+  },
+  (table) => ({
+    questionIdx: index("idx_questionOptions_questionId").on(table.questionId),
+  })
+);
