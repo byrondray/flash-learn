@@ -136,7 +136,7 @@ function SidebarContent() {
             <h2 className="mb-2 pr-4 text-xl font-semibold">Flash Learn</h2>
           </div>
         </FadeIn>{" "}
-        <StaggerContainer className="space-y-1">
+        <StaggerContainer className="flex flex-col gap-1">
           {navigationItems.map((item) => {
             const Icon = item.icon;
             return (

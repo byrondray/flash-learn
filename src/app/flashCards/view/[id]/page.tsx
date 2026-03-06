@@ -98,7 +98,7 @@ export default function ViewFlashCardsPage() {
                 From note: {note?.notes.title || "Untitled"}
               </p>
             </div>
-            <div className="space-x-4">
+            <div className="flex gap-4">
               <HoverScale>
                 <Button
                   variant="outline"

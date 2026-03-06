@@ -37,7 +37,14 @@ export function useCollaboration(props: {
   const [activeUsers, setActiveUsers] = useState<CollabUser[]>([]);
   const providerRef = useRef<HocuspocusProvider | null>(null);
 
-  const ydoc = useMemo(() => new Y.Doc(), []);
+  const ydocRef = useRef<Y.Doc>(new Y.Doc());
+  const ydoc = ydocRef.current;
+
+  useEffect(() => {
+    return () => {
+      ydocRef.current.destroy();
+    };
+  }, []);
 
   const userColor = useMemo(() => {
     if (!props.userId) return COLLAB_COLORS[0];
@@ -87,7 +94,6 @@ export function useCollaboration(props: {
     props.userId,
     props.userName,
     props.collabUrl,
-    ydoc,
     userColor,
   ]);
 

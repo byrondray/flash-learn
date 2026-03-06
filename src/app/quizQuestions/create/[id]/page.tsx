@@ -51,7 +51,7 @@ function QuestionSkeleton() {
         <Skeleton className="h-8 w-full" />
         <div className="space-y-3">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="flex items-center space-x-2">
+            <div key={i} className="flex items-center gap-2">
               <Skeleton className="h-4 w-4 rounded-full" />
               <Skeleton className="h-4 w-3/4" />
             </div>
@@ -344,7 +344,7 @@ export default function CreateQuiz() {
                             <Label
                               htmlFor={`q${index}-${optionIndex}`}
                               className={`
-                                flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition-all
+                                flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all
                                 ${
                                   selectedAnswers[index] === option
                                     ? option === question.correctAnswer
