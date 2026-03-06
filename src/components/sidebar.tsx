@@ -122,7 +122,10 @@ function SidebarContent() {
       <div className="px-3 py-2">
         <FadeIn delay={0.2}>
           {" "}
-          <div className="flex items-center gap-2">
+          <div
+            className="flex items-center gap-2 cursor-pointer"
+            onClick={() => router.push("/")}
+          >
             <Image
               src="/logo.png"
               alt="Flash Learn Logo"
