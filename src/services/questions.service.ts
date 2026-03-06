@@ -2,7 +2,7 @@ import { getDB } from "@/database/client";
 import { quizQuestions } from "@/database/schema/quizQuestions";
 import { questionOptions } from "@/database/schema/quizQuestionOptions";
 import { v4 as uuid } from "uuid";
-import { eq, inArray } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { notes } from "@/database/schema/notes";
 
 const db = getDB();
@@ -14,57 +14,81 @@ export async function createQuizQuestion(
   correctAnswer: string,
   explanation: string
 ) {
-  const [createdQuestion] = await db
-    .insert(quizQuestions)
-    .values({
+  return await db.transaction(async (tx) => {
+    const [createdQuestion] = await tx
+      .insert(quizQuestions)
+      .values({
+        id: uuid(),
+        noteId,
+        question,
+        correctAnswer,
+        explanation,
+      })
+      .returning();
+
+    const optionsToInsert = options.map((optionText) => ({
       id: uuid(),
-      noteId,
-      question,
-      correctAnswer,
-      explanation,
-    })
-    .returning();
+      questionId: createdQuestion.id,
+      optionText,
+    }));
 
-  const optionsToInsert = options.map((optionText) => ({
-    id: uuid(),
-    questionId: createdQuestion.id,
-    optionText,
-  }));
+    await tx.insert(questionOptions).values(optionsToInsert);
 
-  await db.insert(questionOptions).values(optionsToInsert);
-
-  return createdQuestion;
+    return createdQuestion;
+  });
 }
 
 export async function updateQuizQuestion(
   quizQuestionId: string,
+  userId: string,
   question: string,
   options: string[],
   correctAnswer: string,
   explanation: string
 ) {
-  const [updatedQuestion] = await db
-    .update(quizQuestions)
-    .set({ question, correctAnswer, explanation })
-    .where(eq(quizQuestions.id, quizQuestionId))
-    .returning();
+  const owned = await db
+    .select()
+    .from(quizQuestions)
+    .innerJoin(notes, eq(quizQuestions.noteId, notes.id))
+    .where(and(eq(quizQuestions.id, quizQuestionId), eq(notes.userId, userId)));
 
-  await db
-    .delete(questionOptions)
-    .where(eq(questionOptions.questionId, quizQuestionId));
+  if (owned.length === 0) return null;
 
-  const optionsToInsert = options.map((optionText) => ({
-    id: uuid(),
-    questionId: quizQuestionId,
-    optionText,
-  }));
+  return await db.transaction(async (tx) => {
+    const [updatedQuestion] = await tx
+      .update(quizQuestions)
+      .set({ question, correctAnswer, explanation })
+      .where(eq(quizQuestions.id, quizQuestionId))
+      .returning();
 
-  await db.insert(questionOptions).values(optionsToInsert);
+    await tx
+      .delete(questionOptions)
+      .where(eq(questionOptions.questionId, quizQuestionId));
 
-  return updatedQuestion;
+    const optionsToInsert = options.map((optionText) => ({
+      id: uuid(),
+      questionId: quizQuestionId,
+      optionText,
+    }));
+
+    await tx.insert(questionOptions).values(optionsToInsert);
+
+    return updatedQuestion;
+  });
 }
 
-export async function deleteQuizQuestion(quizQuestionId: string) {
+export async function deleteQuizQuestion(
+  quizQuestionId: string,
+  userId: string
+) {
+  const owned = await db
+    .select()
+    .from(quizQuestions)
+    .innerJoin(notes, eq(quizQuestions.noteId, notes.id))
+    .where(and(eq(quizQuestions.id, quizQuestionId), eq(notes.userId, userId)));
+
+  if (owned.length === 0) return;
+
   return await db
     .delete(quizQuestions)
     .where(eq(quizQuestions.id, quizQuestionId));

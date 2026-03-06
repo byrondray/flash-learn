@@ -2,7 +2,7 @@ import { getDB } from "@/database/client";
 import { notes } from "@/database/schema/notes";
 import { flashCards } from "@/database/schema/flashCards";
 import { v4 as uuid } from "uuid";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 const db = getDB();
 
@@ -19,9 +19,18 @@ export async function createFlashCard(
 
 export async function updateFlashCard(
   flashCardId: string,
+  userId: string,
   question: string,
   answer: string
 ) {
+  const card = await db
+    .select({ flashCards, notes })
+    .from(flashCards)
+    .innerJoin(notes, eq(flashCards.noteId, notes.id))
+    .where(and(eq(flashCards.id, flashCardId), eq(notes.userId, userId)));
+
+  if (card.length === 0) return [];
+
   return await db
     .update(flashCards)
     .set({ question, answer })
@@ -29,7 +38,15 @@ export async function updateFlashCard(
     .returning();
 }
 
-export async function deleteFlashCard(flashCardId: string) {
+export async function deleteFlashCard(flashCardId: string, userId: string) {
+  const card = await db
+    .select({ flashCards, notes })
+    .from(flashCards)
+    .innerJoin(notes, eq(flashCards.noteId, notes.id))
+    .where(and(eq(flashCards.id, flashCardId), eq(notes.userId, userId)));
+
+  if (card.length === 0) return;
+
   return await db.delete(flashCards).where(eq(flashCards.id, flashCardId));
 }
 

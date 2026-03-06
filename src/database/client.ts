@@ -15,12 +15,7 @@ if (!url) throw new Error("Missing db url env variable");
 const authToken = process.env.AUTH_TOKEN;
 if (!authToken && !isDev) throw new Error("Missing db auth token env variable");
 
-export const config = {
-  url,
-  authToken,
-};
-
-const client = createClient(config);
+const client = createClient({ url, authToken });
 
 let dbSingleton: libsql.LibSQLDatabase | undefined;
 

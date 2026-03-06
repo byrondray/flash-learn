@@ -3,7 +3,7 @@ import { notes } from "@/database/schema/notes";
 import { testScores } from "@/database/schema/testScores";
 import { users } from "@/database/schema/users";
 import { v4 as uuid } from "uuid";
-import { eq } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { quizQuestions } from "@/database/schema/quizQuestions";
 
 const db = getDB();
@@ -21,9 +21,19 @@ export async function createTestScore(
 
 export async function updateTestScore(
   testScoreId: string,
+  userId: string,
   score: string,
   dateAttempted: string
 ) {
+  const owned = await db
+    .select({ testScores })
+    .from(testScores)
+    .innerJoin(quizQuestions, eq(testScores.quizQuestionId, quizQuestions.id))
+    .innerJoin(notes, eq(quizQuestions.noteId, notes.id))
+    .where(and(eq(testScores.id, testScoreId), eq(notes.userId, userId)));
+
+  if (owned.length === 0) return [];
+
   return await db
     .update(testScores)
     .set({ score, dateAttempted })
@@ -31,7 +41,16 @@ export async function updateTestScore(
     .returning();
 }
 
-export const deleteTestScore = async (testScoreId: string) => {
+export const deleteTestScore = async (testScoreId: string, userId: string) => {
+  const owned = await db
+    .select({ testScores })
+    .from(testScores)
+    .innerJoin(quizQuestions, eq(testScores.quizQuestionId, quizQuestions.id))
+    .innerJoin(notes, eq(quizQuestions.noteId, notes.id))
+    .where(and(eq(testScores.id, testScoreId), eq(notes.userId, userId)));
+
+  if (owned.length === 0) return;
+
   return await db.delete(testScores).where(eq(testScores.id, testScoreId));
 };
 
@@ -65,19 +84,13 @@ export const getTestScoresForUser = async (userId: string) => {
 };
 
 export const getMostRecentTestScoreForUser = async (userId: string) => {
-  const scores = await db
+  return await db
     .select({ testScores })
     .from(testScores)
     .innerJoin(quizQuestions, eq(testScores.quizQuestionId, quizQuestions.id))
     .innerJoin(notes, eq(quizQuestions.noteId, notes.id))
     .innerJoin(users, eq(notes.userId, users.id))
-    .where(eq(users.id, userId));
-
-  const sortedScores = scores.sort((a, b) => {
-    const dateA = new Date(a.testScores.dateAttempted);
-    const dateB = new Date(b.testScores.dateAttempted);
-    return dateB.getTime() - dateA.getTime();
-  });
-
-  return sortedScores.length > 0 ? [sortedScores[0]] : [];
+    .where(eq(users.id, userId))
+    .orderBy(desc(testScores.dateAttempted))
+    .limit(1);
 };
