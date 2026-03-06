@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState, useMemo } from "react";
-import { HocuspocusProvider } from "@hocuspocus/provider";
+import {
+  HocuspocusProvider,
+  type onAwarenessUpdateParameters,
+} from "@hocuspocus/provider";
 import * as Y from "yjs";
 
 const COLLAB_COLORS = [
@@ -56,9 +59,9 @@ export function useCollaboration(props: {
       onConnect: () => setIsConnected(true),
       onDisconnect: () => setIsConnected(false),
       onSynced: () => setIsSynced(true),
-      onAwarenessUpdate: ({ states }) => {
+      onAwarenessUpdate: ({ states }: onAwarenessUpdateParameters) => {
         const users: CollabUser[] = [];
-        states.forEach((state) => {
+        states.forEach((state: Record<string, unknown>) => {
           if (state.user) {
             users.push(state.user as CollabUser);
           }
