@@ -220,7 +220,7 @@ export function ThreeDFlip({
           transformStyle: "preserve-3d",
         }}
       >
-        <div style={{ display: "grid" }}>
+        <div style={{ display: "grid", transformStyle: "preserve-3d" }}>
           <div
             style={{
               backfaceVisibility: "hidden",

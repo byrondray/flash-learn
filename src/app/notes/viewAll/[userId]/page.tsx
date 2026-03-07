@@ -55,7 +55,10 @@ export default function NotesOverviewPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const stripHtml = (html: string) => html.replace(/<[^>]+>/g, "");
+  const stripHtml = (html: string | object) => {
+    if (typeof html !== "string") return "";
+    return html.replace(/<[^>]+>/g, "");
+  };
 
   useEffect(() => {
     async function loadNotes() {
