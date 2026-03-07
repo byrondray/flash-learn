@@ -50,7 +50,42 @@ import {
   SelectValue,
 } from "./select";
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "./tooltip";
 import { FontSize } from "./font-size-extension";
+
+function ToolbarButton(props: {
+  tooltip: string;
+  onClick: () => void;
+  active?: boolean;
+  disabled?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <TooltipProvider delayDuration={300}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant={props.active ? "default" : "ghost"}
+            size="sm"
+            onClick={props.onClick}
+            disabled={props.disabled}
+            className="h-8 w-8 p-0"
+          >
+            {props.children}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" className="text-xs">
+          {props.tooltip}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
 import Collaboration from "@tiptap/extension-collaboration";
 import CollaborationCursor from "@tiptap/extension-collaboration-cursor";
 import type { HocuspocusProvider } from "@hocuspocus/provider";
@@ -256,24 +291,12 @@ export function RichTextEditor(props: RichTextEditorProps) {
       {/* Main Toolbar */}
       <div className="border-b p-2 flex flex-wrap items-center gap-1 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         {/* Undo/Redo */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor.chain().focus().undo().run()}
-          disabled={!editor.can().undo()}
-          className="h-8 w-8 p-0"
-        >
+        <ToolbarButton tooltip="Undo" onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()}>
           <Undo className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor.chain().focus().redo().run()}
-          disabled={!editor.can().redo()}
-          className="h-8 w-8 p-0"
-        >
+        </ToolbarButton>
+        <ToolbarButton tooltip="Redo" onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()}>
           <Redo className="h-4 w-4" />
-        </Button>
+        </ToolbarButton>
 
         <Separator orientation="vertical" className="h-6" />
 
@@ -303,48 +326,35 @@ export function RichTextEditor(props: RichTextEditorProps) {
         <Separator orientation="vertical" className="h-6" />
 
         {/* Text Formatting */}
-        <Button
-          variant={editor.isActive("bold") ? "default" : "ghost"}
-          size="sm"
-          onClick={() => editor.chain().focus().toggleBold().run()}
-          className="h-8 w-8 p-0"
-        >
+        <ToolbarButton tooltip="Bold" onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive("bold")}>
           <Bold className="h-4 w-4" />
-        </Button>
-        <Button
-          variant={editor.isActive("italic") ? "default" : "ghost"}
-          size="sm"
-          onClick={() => editor.chain().focus().toggleItalic().run()}
-          className="h-8 w-8 p-0"
-        >
+        </ToolbarButton>
+        <ToolbarButton tooltip="Italic" onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive("italic")}>
           <Italic className="h-4 w-4" />
-        </Button>
-        <Button
-          variant={editor.isActive("underline") ? "default" : "ghost"}
-          size="sm"
-          onClick={() => editor.chain().focus().toggleUnderline().run()}
-          className="h-8 w-8 p-0"
-        >
+        </ToolbarButton>
+        <ToolbarButton tooltip="Underline" onClick={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive("underline")}>
           <UnderlineIcon className="h-4 w-4" />
-        </Button>
-        <Button
-          variant={editor.isActive("strike") ? "default" : "ghost"}
-          size="sm"
-          onClick={() => editor.chain().focus().toggleStrike().run()}
-          className="h-8 w-8 p-0"
-        >
+        </ToolbarButton>
+        <ToolbarButton tooltip="Strikethrough" onClick={() => editor.chain().focus().toggleStrike().run()} active={editor.isActive("strike")}>
           <Strikethrough className="h-4 w-4" />
-        </Button>
+        </ToolbarButton>
 
         <Separator orientation="vertical" className="h-6" />
 
         {/* Text Color */}
         <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-              <Palette className="h-4 w-4" />
-            </Button>
-          </PopoverTrigger>
+          <TooltipProvider delayDuration={300}>
+            <Tooltip>
+              <PopoverTrigger asChild>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <Palette className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+              </PopoverTrigger>
+              <TooltipContent side="bottom" className="text-xs">Text Color</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <PopoverContent className="w-64">
             <div className="grid grid-cols-6 gap-1">
               {COLORS.map((color) => (
@@ -369,15 +379,22 @@ export function RichTextEditor(props: RichTextEditorProps) {
 
         {/* Highlight */}
         <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant={editor.isActive("highlight") ? "default" : "ghost"}
-              size="sm"
-              className="h-8 w-8 p-0"
-            >
-              <Highlighter className="h-4 w-4" />
-            </Button>
-          </PopoverTrigger>
+          <TooltipProvider delayDuration={300}>
+            <Tooltip>
+              <PopoverTrigger asChild>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={editor.isActive("highlight") ? "default" : "ghost"}
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                  >
+                    <Highlighter className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+              </PopoverTrigger>
+              <TooltipContent side="bottom" className="text-xs">Highlight</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <PopoverContent className="w-64">
             <div className="grid grid-cols-6 gap-1">
               {HIGHLIGHT_COLORS.map((color) => (
@@ -405,93 +422,56 @@ export function RichTextEditor(props: RichTextEditorProps) {
         <Separator orientation="vertical" className="h-6" />
 
         {/* Text Alignment */}
-        <Button
-          variant={editor.isActive({ textAlign: "left" }) ? "default" : "ghost"}
-          size="sm"
-          onClick={() => editor.chain().focus().setTextAlign("left").run()}
-          className="h-8 w-8 p-0"
-        >
+        <ToolbarButton tooltip="Align Left" onClick={() => editor.chain().focus().setTextAlign("left").run()} active={editor.isActive({ textAlign: "left" })}>
           <AlignLeft className="h-4 w-4" />
-        </Button>
-        <Button
-          variant={
-            editor.isActive({ textAlign: "center" }) ? "default" : "ghost"
-          }
-          size="sm"
-          onClick={() => editor.chain().focus().setTextAlign("center").run()}
-          className="h-8 w-8 p-0"
-        >
+        </ToolbarButton>
+        <ToolbarButton tooltip="Align Center" onClick={() => editor.chain().focus().setTextAlign("center").run()} active={editor.isActive({ textAlign: "center" })}>
           <AlignCenter className="h-4 w-4" />
-        </Button>
-        <Button
-          variant={
-            editor.isActive({ textAlign: "right" }) ? "default" : "ghost"
-          }
-          size="sm"
-          onClick={() => editor.chain().focus().setTextAlign("right").run()}
-          className="h-8 w-8 p-0"
-        >
+        </ToolbarButton>
+        <ToolbarButton tooltip="Align Right" onClick={() => editor.chain().focus().setTextAlign("right").run()} active={editor.isActive({ textAlign: "right" })}>
           <AlignRight className="h-4 w-4" />
-        </Button>
+        </ToolbarButton>
 
         <Separator orientation="vertical" className="h-6" />
 
         {/* Lists */}
-        <Button
-          variant={editor.isActive("bulletList") ? "default" : "ghost"}
-          size="sm"
-          onClick={() => editor.chain().focus().toggleBulletList().run()}
-          className="h-8 w-8 p-0"
-        >
+        <ToolbarButton tooltip="Bullet List" onClick={() => editor.chain().focus().toggleBulletList().run()} active={editor.isActive("bulletList")}>
           <List className="h-4 w-4" />
-        </Button>
-        <Button
-          variant={editor.isActive("orderedList") ? "default" : "ghost"}
-          size="sm"
-          onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          className="h-8 w-8 p-0"
-        >
+        </ToolbarButton>
+        <ToolbarButton tooltip="Numbered List" onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive("orderedList")}>
           <ListOrdered className="h-4 w-4" />
-        </Button>
-        <Button
-          variant={editor.isActive("taskList") ? "default" : "ghost"}
-          size="sm"
-          onClick={() => editor.chain().focus().toggleTaskList().run()}
-          className="h-8 w-8 p-0"
-        >
+        </ToolbarButton>
+        <ToolbarButton tooltip="Task List" onClick={() => editor.chain().focus().toggleTaskList().run()} active={editor.isActive("taskList")}>
           <CheckSquare className="h-4 w-4" />
-        </Button>
+        </ToolbarButton>
 
         <Separator orientation="vertical" className="h-6" />
 
         {/* Other Features */}
-        <Button
-          variant={editor.isActive("blockquote") ? "default" : "ghost"}
-          size="sm"
-          onClick={() => editor.chain().focus().toggleBlockquote().run()}
-          className="h-8 w-8 p-0"
-        >
+        <ToolbarButton tooltip="Blockquote" onClick={() => editor.chain().focus().toggleBlockquote().run()} active={editor.isActive("blockquote")}>
           <Quote className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor.chain().focus().setHorizontalRule().run()}
-          className="h-8 w-8 p-0"
-        >
+        </ToolbarButton>
+        <ToolbarButton tooltip="Horizontal Rule" onClick={() => editor.chain().focus().setHorizontalRule().run()}>
           <Minus className="h-4 w-4" />
-        </Button>
+        </ToolbarButton>
         <Popover open={linkPopoverOpen} onOpenChange={setLinkPopoverOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant={editor.isActive("link") ? "default" : "ghost"}
-              size="sm"
-              onClick={openLinkPopover}
-              className="h-8 w-8 p-0"
-            >
-              <LinkIcon className="h-4 w-4" />
-            </Button>
-          </PopoverTrigger>
+          <TooltipProvider delayDuration={300}>
+            <Tooltip>
+              <PopoverTrigger asChild>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={editor.isActive("link") ? "default" : "ghost"}
+                    size="sm"
+                    onClick={openLinkPopover}
+                    className="h-8 w-8 p-0"
+                  >
+                    <LinkIcon className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+              </PopoverTrigger>
+              <TooltipContent side="bottom" className="text-xs">Insert Link</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <PopoverContent className="w-80 p-3" align="start">
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium">Link URL</label>
@@ -542,14 +522,9 @@ export function RichTextEditor(props: RichTextEditorProps) {
             </div>
           </PopoverContent>
         </Popover>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={addTable}
-          className="h-8 w-8 p-0"
-        >
+        <ToolbarButton tooltip="Insert Table" onClick={addTable}>
           <TableIcon className="h-4 w-4" />
-        </Button>
+        </ToolbarButton>
 
         <div className="flex-1" />
 
