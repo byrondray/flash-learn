@@ -271,18 +271,6 @@ export function RichTextEditor(props: RichTextEditorProps) {
       .run();
   }, [editor]);
 
-  const formatLastSaved = (date: Date | null) => {
-    if (!date) return "Never";
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffSeconds = Math.floor(diffMs / 1000);
-    const diffMinutes = Math.floor(diffSeconds / 60);
-
-    if (diffSeconds < 60) return "Just now";
-    if (diffMinutes < 60) return `${diffMinutes}m ago`;
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  };
-
   if (!editor) {
     return null;
   }

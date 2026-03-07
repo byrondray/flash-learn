@@ -29,7 +29,7 @@ export default function InvitePage() {
     }
 
     handleInvite();
-  }, [token, router]);
+  }, [token, router, searchParams]);
 
   if (error) {
     return (
