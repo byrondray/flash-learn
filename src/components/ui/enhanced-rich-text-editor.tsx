@@ -184,7 +184,7 @@ export function RichTextEditor(props: RichTextEditorProps) {
         props.onChange(editor.getHTML());
       }
     },
-  });
+  }, [props.provider]);
 
   useEffect(() => {
     if (!isCollab && editor && props.content !== editor.getHTML()) {

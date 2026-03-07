@@ -35,6 +35,7 @@ export function useCollaboration(props: {
   const [isConnected, setIsConnected] = useState(false);
   const [isSynced, setIsSynced] = useState(false);
   const [activeUsers, setActiveUsers] = useState<CollabUser[]>([]);
+  const [provider, setProvider] = useState<HocuspocusProvider | null>(null);
   const providerRef = useRef<HocuspocusProvider | null>(null);
 
   const ydocRef = useRef<Y.Doc>(new Y.Doc());
@@ -58,7 +59,7 @@ export function useCollaboration(props: {
   useEffect(() => {
     if (!props.noteId || !props.userId) return;
 
-    const provider = new HocuspocusProvider({
+    const newProvider = new HocuspocusProvider({
       url: props.collabUrl,
       name: props.noteId,
       document: ydoc,
@@ -77,23 +78,25 @@ export function useCollaboration(props: {
       },
     });
 
-    provider.setAwarenessField("user", {
+    newProvider.setAwarenessField("user", {
       name: props.userName || props.userId.slice(0, 8),
       color: userColor,
       userId: props.userId,
     });
 
-    providerRef.current = provider;
+    providerRef.current = newProvider;
+    setProvider(newProvider);
 
     return () => {
-      provider.destroy();
+      newProvider.destroy();
       providerRef.current = null;
+      setProvider(null);
     };
   }, [props.noteId, props.userId, props.userName, props.collabUrl, userColor]);
 
   return {
     ydoc,
-    provider: providerRef.current,
+    provider,
     isConnected,
     isSynced,
     activeUsers,
