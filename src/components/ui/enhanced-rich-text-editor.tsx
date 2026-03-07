@@ -38,8 +38,6 @@ import {
   Undo,
   Redo,
   Palette,
-  Save,
-  Clock,
 } from "lucide-react";
 import { useCallback, useEffect, useState, useRef } from "react";
 import {
@@ -101,6 +99,7 @@ interface RichTextEditorProps {
   provider?: HocuspocusProvider | null;
   userName?: string;
   userColor?: string;
+  editable?: boolean;
 }
 
 const FONT_SIZES = [
@@ -150,9 +149,11 @@ const HIGHLIGHT_COLORS = [
 
 export function RichTextEditor(props: RichTextEditorProps) {
   const isCollab = !!props.ydoc;
+  const isEditable = props.editable !== false;
 
   const editor = useEditor({
     immediatelyRender: false,
+    editable: isEditable,
     extensions: [
       StarterKit.configure({
         history: isCollab ? false : undefined,
@@ -289,6 +290,7 @@ export function RichTextEditor(props: RichTextEditorProps) {
   return (
     <div className={`border rounded-lg ${props.className}`}>
       {/* Main Toolbar */}
+      {isEditable && (
       <div className="border-b p-2 flex flex-wrap items-center gap-1 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         {/* Undo/Redo */}
         <ToolbarButton tooltip="Undo" onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()}>
@@ -526,9 +528,10 @@ export function RichTextEditor(props: RichTextEditorProps) {
           <TableIcon className="h-4 w-4" />
         </ToolbarButton>
       </div>
+      )}
 
       {/* Bubble Menu for selected text */}
-      {editor && (
+      {isEditable && editor && (
         <BubbleMenu
           editor={editor}
           tippyOptions={{ duration: 100 }}

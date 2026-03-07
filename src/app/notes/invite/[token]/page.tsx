@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { acceptInvite } from "./actions";
 import { Loader2 } from "lucide-react";
 
 export default function InvitePage() {
   const { token } = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -18,7 +19,8 @@ export default function InvitePage() {
         return;
       }
 
-      const result = await acceptInvite(inviteToken);
+      const permission = searchParams.get("permission") === "view" ? "view" as const : "edit" as const;
+      const result = await acceptInvite(inviteToken, permission);
       if (result.success && result.noteId) {
         router.replace(`/notes/${result.noteId}`);
       } else {

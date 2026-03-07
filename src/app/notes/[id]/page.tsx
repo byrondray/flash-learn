@@ -36,6 +36,7 @@ export default function NotePage() {
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
+  const [permission, setPermission] = useState<"edit" | "view">("edit");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -67,6 +68,9 @@ export default function NotePage() {
         if (note) {
           setTitle(note.notes.title || "");
           setIsOwner(note.role === "owner");
+          if (note.role === "collaborator" && note.permission) {
+            setPermission(note.permission);
+          }
         } else {
           setError("Note not found");
         }
@@ -102,6 +106,8 @@ export default function NotePage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTitle(e.target.value);
   };
+
+  const canEdit = isOwner || permission === "edit";
 
   const handleDelete = async () => {
     if (!noteId) return;
@@ -181,6 +187,7 @@ export default function NotePage() {
                   value={title}
                   onChange={handleInputChange}
                   className="text-lg font-medium"
+                  readOnly={!canEdit}
                 />
               </FadeIn>
             </div>
@@ -192,26 +199,30 @@ export default function NotePage() {
                 </HoverScale>
               )}
 
-              <HoverScale>
-                <Button
-                  size="sm"
-                  onClick={() => router.push(`/flashCards/create/${noteId}`)}
-                >
-                  <Brain className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">Create Flash Cards</span>
-                  <span className="sm:hidden">Cards</span>
-                </Button>
-              </HoverScale>
-              <HoverScale>
-                <Button
-                  size="sm"
-                  onClick={() => router.push(`/quizQuestions/create/${noteId}`)}
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">Create Quiz</span>
-                  <span className="sm:hidden">Quiz</span>
-                </Button>
-              </HoverScale>
+              {canEdit && (
+                <>
+                  <HoverScale>
+                    <Button
+                      size="sm"
+                      onClick={() => router.push(`/flashCards/create/${noteId}`)}
+                    >
+                      <Brain className="h-4 w-4 mr-2" />
+                      <span className="hidden sm:inline">Create Flash Cards</span>
+                      <span className="sm:hidden">Cards</span>
+                    </Button>
+                  </HoverScale>
+                  <HoverScale>
+                    <Button
+                      size="sm"
+                      onClick={() => router.push(`/quizQuestions/create/${noteId}`)}
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      <span className="hidden sm:inline">Create Quiz</span>
+                      <span className="sm:hidden">Quiz</span>
+                    </Button>
+                  </HoverScale>
+                </>
+              )}
               {isOwner && (
                 <HoverScale>
                   <Button
@@ -235,6 +246,7 @@ export default function NotePage() {
             provider={provider}
             userName={user?.given_name || user?.email || undefined}
             userColor={userColor}
+            editable={canEdit}
             className="min-h-[calc(100vh-200px)] w-full"
           />
         </FadeIn>

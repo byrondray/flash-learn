@@ -10,12 +10,20 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Share2, X, UserPlus, Copy, Check } from "lucide-react";
 import {
   shareNoteWithEmail,
   removeNoteCollaborator,
   fetchNoteCollaborators,
   getInviteLink,
+  updateCollaboratorPermission,
 } from "@/app/notes/[id]/actions";
 
 export function ShareNoteDialog(props: {
@@ -24,6 +32,8 @@ export function ShareNoteDialog(props: {
 }) {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
+  const [sharePermission, setSharePermission] = useState<"edit" | "view">("edit");
+  const [linkPermission, setLinkPermission] = useState<"edit" | "view">("edit");
   const [isSharing, setIsSharing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -41,8 +51,8 @@ export function ShareNoteDialog(props: {
   const loadInviteLink = useCallback(async () => {
     const token = await getInviteLink(props.noteId);
     const origin = window.location.origin;
-    setInviteUrl(`${origin}/notes/invite/${token}`);
-  }, [props.noteId]);
+    setInviteUrl(`${origin}/notes/invite/${token}?permission=${linkPermission}`);
+  }, [props.noteId, linkPermission]);
 
   useEffect(() => {
     if (open) {
@@ -57,7 +67,7 @@ export function ShareNoteDialog(props: {
     setError(null);
     setSuccess(null);
 
-    const result = await shareNoteWithEmail(props.noteId, email.trim());
+    const result = await shareNoteWithEmail(props.noteId, email.trim(), sharePermission);
     if (result.success) {
       setSuccess(`Shared with ${email}`);
       setEmail("");
@@ -105,7 +115,17 @@ export function ShareNoteDialog(props: {
                 if (e.key === "Enter") handleShare();
               }}
               type="email"
+              className="flex-1"
             />
+            <Select value={sharePermission} onValueChange={(v: "edit" | "view") => setSharePermission(v)}>
+              <SelectTrigger className="w-[100px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="edit">Edit</SelectItem>
+                <SelectItem value="view">View</SelectItem>
+              </SelectContent>
+            </Select>
             <Button onClick={handleShare} disabled={isSharing || !email.trim()}>
               <UserPlus className="h-4 w-4 mr-2" />
               Add
@@ -125,8 +145,17 @@ export function ShareNoteDialog(props: {
               <Input
                 readOnly
                 value={inviteUrl}
-                className="text-sm text-muted-foreground"
+                className="text-sm text-muted-foreground flex-1"
               />
+              <Select value={linkPermission} onValueChange={(v: "edit" | "view") => setLinkPermission(v)}>
+                <SelectTrigger className="w-[100px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="edit">Edit</SelectItem>
+                  <SelectItem value="view">View</SelectItem>
+                </SelectContent>
+              </Select>
               <Button variant="outline" size="icon" onClick={handleCopyLink} disabled={!inviteUrl}>
                 {copied ? (
                   <Check className="h-4 w-4 text-green-500" />
@@ -145,20 +174,32 @@ export function ShareNoteDialog(props: {
                   key={c.userId}
                   className="flex items-center justify-between rounded-md border px-3 py-2"
                 >
-                  <div className="text-sm">
-                    <span>{c.email}</span>
-                    <span className="ml-2 text-xs text-muted-foreground">
-                      ({c.permission})
-                    </span>
+                  <span className="text-sm flex-1">{c.email}</span>
+                  <div className="flex items-center gap-2">
+                    <Select
+                      value={c.permission}
+                      onValueChange={async (v: "edit" | "view") => {
+                        await updateCollaboratorPermission(props.noteId, c.userId, v);
+                        loadCollaborators();
+                      }}
+                    >
+                      <SelectTrigger className="w-[90px] h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="edit">Edit</SelectItem>
+                        <SelectItem value="view">View</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => handleRemove(c.userId)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => handleRemove(c.userId)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
                 </div>
               ))}
             </div>

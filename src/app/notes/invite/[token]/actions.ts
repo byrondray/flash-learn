@@ -4,7 +4,10 @@ import { getNoteByInviteToken } from "@/services/note.service";
 import { addCollaborator } from "@/services/collaborator.service";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 
-export async function acceptInvite(token: string) {
+export async function acceptInvite(
+  token: string,
+  permission: "edit" | "view" = "edit"
+) {
   const { getUser } = getKindeServerSession();
   const user = await getUser();
   if (!user?.id) throw new Error("Unauthorized");
@@ -16,6 +19,6 @@ export async function acceptInvite(token: string) {
     return { success: true, noteId: note.notes.id };
   }
 
-  await addCollaborator(note.notes.id, user.id, "edit");
+  await addCollaborator(note.notes.id, user.id, permission);
   return { success: true, noteId: note.notes.id };
 }

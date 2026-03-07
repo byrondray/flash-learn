@@ -62,7 +62,11 @@ export async function fetchNote(noteId: string) {
   return await getNoteWithAccess(noteId, user.id);
 }
 
-export async function shareNoteWithEmail(noteId: string, email: string) {
+export async function shareNoteWithEmail(
+  noteId: string,
+  email: string,
+  permission: "edit" | "view" = "edit"
+) {
   const { getUser } = getKindeServerSession();
   const user = await getUser();
   if (!user?.id) throw new Error("Unauthorized");
@@ -80,7 +84,7 @@ export async function shareNoteWithEmail(noteId: string, email: string) {
     return { success: false, error: "You can't share a note with yourself" };
   }
 
-  await addCollaborator(noteId, targetUser.users.id);
+  await addCollaborator(noteId, targetUser.users.id, permission);
   return { success: true };
 }
 
@@ -96,6 +100,22 @@ export async function removeNoteCollaborator(
   if (!ownerCheck) throw new Error("Only the note owner can manage sharing");
 
   await removeCollaborator(noteId, collaboratorUserId);
+  return { success: true };
+}
+
+export async function updateCollaboratorPermission(
+  noteId: string,
+  collaboratorUserId: string,
+  permission: "edit" | "view"
+) {
+  const { getUser } = getKindeServerSession();
+  const user = await getUser();
+  if (!user?.id) throw new Error("Unauthorized");
+
+  const ownerCheck = await isNoteOwner(noteId, user.id);
+  if (!ownerCheck) throw new Error("Only the note owner can manage sharing");
+
+  await addCollaborator(noteId, collaboratorUserId, permission);
   return { success: true };
 }
 
