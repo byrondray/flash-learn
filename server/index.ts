@@ -20,8 +20,6 @@ import TableRow from "@tiptap/extension-table-row";
 import TableHeaderCell from "@tiptap/extension-table-header";
 import TableCell from "@tiptap/extension-table-cell";
 import CharacterCount from "@tiptap/extension-character-count";
-import BulletList from "@tiptap/extension-bullet-list";
-import OrderedList from "@tiptap/extension-ordered-list";
 
 const dbUrl = process.env.DB_URL;
 const authToken = process.env.AUTH_TOKEN;
@@ -45,8 +43,6 @@ const tiptapExtensions = [
   Underline,
   TextAlign.configure({ types: ["heading", "paragraph"] }),
   Highlight.configure({ multicolor: true }),
-  BulletList,
-  OrderedList,
   TaskList,
   TaskItem.configure({ nested: true }),
   Link.configure({ openOnClick: false }),
