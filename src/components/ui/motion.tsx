@@ -208,7 +208,7 @@ export function ThreeDFlip({
   className?: string;
 }) {
   return (
-    <div className={`relative ${className}`} style={{ perspective: "1000px" }}>
+    <div className={className} style={{ perspective: "1000px" }}>
       <motion.div
         animate={{ rotateY: isFlipped ? 180 : 0 }}
         transition={{
@@ -218,37 +218,26 @@ export function ThreeDFlip({
         }}
         style={{
           transformStyle: "preserve-3d",
-          width: "100%",
-          height: "100%",
         }}
       >
-        {/* Front face */}
-        <div
-          style={{
-            backfaceVisibility: "hidden",
-            position: "absolute",
-            width: "100%",
-            height: "100%",
-            top: 0,
-            left: 0,
-          }}
-        >
-          {frontContent}
-        </div>
-
-        {/* Back face */}
-        <div
-          style={{
-            backfaceVisibility: "hidden",
-            position: "absolute",
-            width: "100%",
-            height: "100%",
-            top: 0,
-            left: 0,
-            transform: "rotateY(180deg)",
-          }}
-        >
-          {backContent}
+        <div style={{ display: "grid" }}>
+          <div
+            style={{
+              backfaceVisibility: "hidden",
+              gridArea: "1 / 1",
+            }}
+          >
+            {frontContent}
+          </div>
+          <div
+            style={{
+              backfaceVisibility: "hidden",
+              gridArea: "1 / 1",
+              transform: "rotateY(180deg)",
+            }}
+          >
+            {backContent}
+          </div>
         </div>
       </motion.div>
     </div>

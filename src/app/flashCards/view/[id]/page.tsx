@@ -168,16 +168,16 @@ export default function ViewFlashCardsPage() {
                       <ThreeDFlip
                         isFlipped={flippedCards[card.flashCards.id] || false}
                         frontContent={
-                          <div className="min-h-[100px] flex items-center justify-center text-center p-4">
+                          <div className="min-h-[100px] flex items-center justify-center text-center p-4 text-base">
                             {card.flashCards.question}
                           </div>
                         }
                         backContent={
-                          <div className="min-h-[100px] flex items-center justify-center text-center p-4">
+                          <div className="min-h-[100px] flex items-center justify-center text-center p-4 text-sm leading-relaxed">
                             {card.flashCards.answer}
                           </div>
                         }
-                        className="mb-4 min-h-[100px]"
+                        className="mb-4"
                       />
                     </CardContent>
                   </Card>
