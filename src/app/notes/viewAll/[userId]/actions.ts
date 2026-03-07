@@ -1,6 +1,6 @@
 "use server";
 
-import { getNotesForUser } from "@/services/note.service";
+import { getNotesForUser, deleteNote } from "@/services/note.service";
 import { getSharedNotesForUser } from "@/services/collaborator.service";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 
@@ -34,4 +34,11 @@ export async function fetchSharedNotes() {
   const user = await getUser();
   if (!user?.id) throw new Error("Unauthorized");
   return await getSharedNotesForUser(user.id);
+}
+
+export async function deleteExistingNote(noteId: string) {
+  const { getUser } = getKindeServerSession();
+  const user = await getUser();
+  if (!user?.id) throw new Error("Unauthorized");
+  return await deleteNote(noteId, user.id);
 }

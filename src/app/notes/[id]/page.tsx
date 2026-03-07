@@ -5,10 +5,10 @@ import { useDebounce } from "use-debounce";
 import { RichTextEditor } from "@/components/ui/enhanced-rich-text-editor";
 import { Input } from "@/components/ui/input";
 import { useParams, useRouter } from "next/navigation";
-import { updateExistingNoteTitle, fetchNote } from "./actions";
+import { updateExistingNoteTitle, fetchNote, deleteExistingNote } from "./actions";
 import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
 import { Button } from "@/components/ui/button";
-import { FileText, Brain, Loader2, ArrowLeft } from "lucide-react";
+import { FileText, Brain, Loader2, ArrowLeft, Trash2 } from "lucide-react";
 import {
   PageTransition,
   SlideIn,
@@ -18,6 +18,14 @@ import {
 import { useCollaboration } from "@/hooks/useCollaboration";
 import { CollaborationIndicator } from "@/components/ui/collaboration-indicator";
 import { ShareNoteDialog } from "@/components/ui/share-note-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function NotePage() {
   const { id } = useParams();
@@ -28,6 +36,8 @@ export default function NotePage() {
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const noteId = Array.isArray(id) ? id[0] : id;
 
@@ -91,6 +101,19 @@ export default function NotePage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTitle(e.target.value);
+  };
+
+  const handleDelete = async () => {
+    if (!noteId) return;
+    setIsDeleting(true);
+    try {
+      await deleteExistingNote(noteId);
+      router.push(`/notes/viewAll/${user?.id}`);
+    } catch (err) {
+      console.error("Error deleting note:", err);
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+    }
   };
 
   if (error) {
@@ -189,6 +212,18 @@ export default function NotePage() {
                   <span className="sm:hidden">Quiz</span>
                 </Button>
               </HoverScale>
+              {isOwner && (
+                <HoverScale>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-muted-foreground hover:text-destructive"
+                    onClick={() => setShowDeleteDialog(true)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </HoverScale>
+              )}
             </div>
           </div>
         </SlideIn>{" "}
@@ -203,6 +238,24 @@ export default function NotePage() {
             className="min-h-[calc(100vh-200px)] w-full"
           />
         </FadeIn>
+        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Note</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this note? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowDeleteDialog(false)} disabled={isDeleting}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+                {isDeleting ? "Deleting..." : "Delete"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </PageTransition>
   );

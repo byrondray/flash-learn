@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
-import { fetchUserNotes, fetchSharedNotes } from "./actions";
+import { fetchUserNotes, fetchSharedNotes, deleteExistingNote } from "./actions";
 import {
   Card,
   CardContent,
@@ -11,9 +11,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, FileText, Plus, Users } from "lucide-react";
+import { Search, FileText, Plus, Users, Trash2 } from "lucide-react";
 import { formatTimeAgo } from "@/utils/formatTime";
 import {
   PageTransition,
@@ -54,6 +62,8 @@ export default function NotesOverviewPage() {
   const [sharedNotes, setSharedNotes] = useState<SharedNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [deleteNoteId, setDeleteNoteId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const stripHtml = (html: string | object) => {
     if (typeof html !== "string") return "";
@@ -78,6 +88,20 @@ export default function NotesOverviewPage() {
     }
     loadNotes();
   }, [user?.id]);
+
+  const handleDelete = async () => {
+    if (!deleteNoteId) return;
+    setIsDeleting(true);
+    try {
+      await deleteExistingNote(deleteNoteId);
+      setNotes((prev) => prev.filter((n) => n.notes.id !== deleteNoteId));
+    } catch (error) {
+      console.error("Error deleting note:", error);
+    } finally {
+      setIsDeleting(false);
+      setDeleteNoteId(null);
+    }
+  };
 
   const filteredNotes = notes.filter(
     (note) =>
@@ -165,9 +189,20 @@ export default function NotesOverviewPage() {
                 <StaggerItem key={note.notes.id}>
                   <HoverScale scale={1.03}>
                     <Card
-                      className="flex flex-col hover:shadow-lg transition-shadow cursor-pointer group min-h-[200px]"
+                      className="flex flex-col hover:shadow-lg transition-shadow cursor-pointer group min-h-[200px] relative"
                       onClick={() => router.push(`/notes/${note.notes.id}`)}
                     >
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive z-10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteNoteId(note.notes.id);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                       <CardHeader>
                         <CardTitle className="line-clamp-1 group-hover:text-primary">
                           {note.notes.title || "Untitled Note"}
@@ -239,6 +274,24 @@ export default function NotesOverviewPage() {
           )}
         </div>
       </div>
+      <Dialog open={deleteNoteId !== null} onOpenChange={(open) => !open && setDeleteNoteId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Note</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this note? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteNoteId(null)} disabled={isDeleting}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+              {isDeleting ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageTransition>
   );
 }
