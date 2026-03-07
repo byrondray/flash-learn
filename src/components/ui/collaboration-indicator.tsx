@@ -87,7 +87,7 @@ export function CollaborationIndicator(props: CollaborationIndicatorProps) {
                         backgroundColor: `${u.color}20`,
                       }}
                     >
-                      {isMe ? "Me" : u.name?.slice(0, 2) || u.userId.slice(0, 2)}
+                      {isMe ? "Me" : u.name || u.userId.slice(0, 2)}
                     </Badge>
                   );
                 })}
