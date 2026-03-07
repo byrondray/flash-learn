@@ -170,7 +170,6 @@ export default function NotePage() {
 
               <HoverScale>
                 <Button
-                  variant="outline"
                   size="sm"
                   onClick={() => router.push(`/flashCards/create/${noteId}`)}
                 >
@@ -181,7 +180,6 @@ export default function NotePage() {
               </HoverScale>
               <HoverScale>
                 <Button
-                  variant="outline"
                   size="sm"
                   onClick={() => router.push(`/quizQuestions/create/${noteId}`)}
                 >

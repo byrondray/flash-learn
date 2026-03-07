@@ -32,6 +32,8 @@ import {
   Quote,
   Minus,
   Link as LinkIcon,
+  Unlink,
+  ExternalLink,
   Table as TableIcon,
   Undo,
   Redo,
@@ -39,7 +41,7 @@ import {
   Save,
   Clock,
 } from "lucide-react";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import {
   Select,
   SelectContent,
@@ -192,22 +194,36 @@ export function RichTextEditor(props: RichTextEditorProps) {
     }
   }, [props.content, editor, isCollab]);
 
-  const setLink = useCallback(() => {
+  const [linkPopoverOpen, setLinkPopoverOpen] = useState(false);
+  const [linkUrl, setLinkUrl] = useState("");
+  const linkInputRef = useRef<HTMLInputElement>(null);
+
+  const openLinkPopover = useCallback(() => {
+    if (!editor) return;
+    const previousUrl = editor.getAttributes("link").href || "";
+    setLinkUrl(previousUrl);
+    setLinkPopoverOpen(true);
+  }, [editor]);
+
+  const applyLink = useCallback(() => {
     if (!editor) return;
 
-    const previousUrl = editor.getAttributes("link").href;
-    const url = window.prompt("URL", previousUrl);
-
-    if (url === null) {
-      return;
-    }
-
-    if (url === "") {
+    if (linkUrl === "") {
       editor.chain().focus().extendMarkRange("link").unsetLink().run();
-      return;
+    } else {
+      const href = linkUrl.match(/^https?:\/\//) ? linkUrl : `https://${linkUrl}`;
+      editor.chain().focus().extendMarkRange("link").setLink({ href }).run();
     }
 
-    editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+    setLinkPopoverOpen(false);
+    setLinkUrl("");
+  }, [editor, linkUrl]);
+
+  const removeLink = useCallback(() => {
+    if (!editor) return;
+    editor.chain().focus().extendMarkRange("link").unsetLink().run();
+    setLinkPopoverOpen(false);
+    setLinkUrl("");
   }, [editor]);
 
   const addTable = useCallback(() => {
@@ -465,14 +481,67 @@ export function RichTextEditor(props: RichTextEditorProps) {
         >
           <Minus className="h-4 w-4" />
         </Button>
-        <Button
-          variant={editor.isActive("link") ? "default" : "ghost"}
-          size="sm"
-          onClick={setLink}
-          className="h-8 w-8 p-0"
-        >
-          <LinkIcon className="h-4 w-4" />
-        </Button>
+        <Popover open={linkPopoverOpen} onOpenChange={setLinkPopoverOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant={editor.isActive("link") ? "default" : "ghost"}
+              size="sm"
+              onClick={openLinkPopover}
+              className="h-8 w-8 p-0"
+            >
+              <LinkIcon className="h-4 w-4" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80 p-3" align="start">
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium">Link URL</label>
+              <div className="flex gap-2">
+                <input
+                  ref={linkInputRef}
+                  type="url"
+                  placeholder="https://example.com"
+                  value={linkUrl}
+                  onChange={(e) => setLinkUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      applyLink();
+                    }
+                  }}
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  autoFocus
+                />
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex gap-1">
+                  {editor.isActive("link") && (
+                    <Button variant="ghost" size="sm" onClick={removeLink} className="text-destructive h-8 gap-1 px-2">
+                      <Unlink className="h-3.5 w-3.5" />
+                      Remove
+                    </Button>
+                  )}
+                  {editor.isActive("link") && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 gap-1 px-2"
+                      onClick={() => {
+                        const href = editor.getAttributes("link").href;
+                        if (href) window.open(href, "_blank", "noopener,noreferrer");
+                      }}
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      Open
+                    </Button>
+                  )}
+                </div>
+                <Button size="sm" onClick={applyLink} className="h-8">
+                  {editor.isActive("link") ? "Update" : "Add"} Link
+                </Button>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
         <Button
           variant="ghost"
           size="sm"
@@ -540,13 +609,23 @@ export function RichTextEditor(props: RichTextEditorProps) {
             <Highlighter className="h-4 w-4" />
           </Button>
           <Button
-            variant="ghost"
+            variant={editor.isActive("link") ? "default" : "ghost"}
             size="sm"
-            onClick={setLink}
+            onClick={openLinkPopover}
             className="h-8 w-8 p-0"
           >
             <LinkIcon className="h-4 w-4" />
           </Button>
+          {editor.isActive("link") && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={removeLink}
+              className="h-8 w-8 p-0 text-destructive"
+            >
+              <Unlink className="h-4 w-4" />
+            </Button>
+          )}
         </BubbleMenu>
       )}
 
