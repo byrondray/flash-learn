@@ -121,25 +121,6 @@ export async function getNoteWithAccess(noteId: string, userId: string) {
     };
   }
 
-  // Anyone with the link can join — auto-add as collaborator
-  const noteExists = await db
-    .select({ notes })
-    .from(notes)
-    .where(eq(notes.id, noteId));
-
-  if (noteExists.length > 0) {
-    await db
-      .insert(noteCollaborators)
-      .values({ noteId, userId, permission: "edit" })
-      .onConflictDoNothing();
-
-    return {
-      notes: noteExists[0].notes,
-      role: "collaborator" as const,
-      permission: "edit" as const,
-    };
-  }
-
   return null;
 }
 
@@ -166,4 +147,31 @@ export async function updateNoteTitleAsCollaborator(
     .set({ title, lastUpdated })
     .where(eq(notes.id, noteId))
     .returning();
+}
+
+export async function getOrCreateInviteToken(noteId: string, userId: string) {
+  const r = await db
+    .select({ inviteToken: notes.inviteToken })
+    .from(notes)
+    .where(and(eq(notes.id, noteId), eq(notes.userId, userId)));
+
+  if (r.length === 0) return null;
+
+  if (r[0].inviteToken) return r[0].inviteToken;
+
+  const token = uuid();
+  await db
+    .update(notes)
+    .set({ inviteToken: token })
+    .where(eq(notes.id, noteId));
+
+  return token;
+}
+
+export async function getNoteByInviteToken(token: string) {
+  const r = await db
+    .select({ notes })
+    .from(notes)
+    .where(eq(notes.inviteToken, token));
+  return r[0] ?? null;
 }

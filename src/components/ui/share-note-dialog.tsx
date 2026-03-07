@@ -15,6 +15,7 @@ import {
   shareNoteWithEmail,
   removeNoteCollaborator,
   fetchNoteCollaborators,
+  getInviteLink,
 } from "@/app/notes/[id]/actions";
 
 export function ShareNoteDialog(props: {
@@ -27,6 +28,7 @@ export function ShareNoteDialog(props: {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [inviteUrl, setInviteUrl] = useState("");
   const [collaborators, setCollaborators] = useState<
     { userId: string; email: string; permission: string; addedAt: string | null }[]
   >([]);
@@ -36,11 +38,18 @@ export function ShareNoteDialog(props: {
     setCollaborators(collabs);
   }, [props.noteId]);
 
+  const loadInviteLink = useCallback(async () => {
+    const token = await getInviteLink(props.noteId);
+    const origin = window.location.origin;
+    setInviteUrl(`${origin}/notes/invite/${token}`);
+  }, [props.noteId]);
+
   useEffect(() => {
     if (open) {
       loadCollaborators();
+      loadInviteLink();
     }
-  }, [open, loadCollaborators]);
+  }, [open, loadCollaborators, loadInviteLink]);
 
   const handleShare = async () => {
     if (!email.trim()) return;
@@ -66,7 +75,7 @@ export function ShareNoteDialog(props: {
   };
 
   const handleCopyLink = async () => {
-    await navigator.clipboard.writeText(window.location.href);
+    await navigator.clipboard.writeText(inviteUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -110,19 +119,22 @@ export function ShareNoteDialog(props: {
             <p className="text-sm text-green-500">{success}</p>
           )}
 
-          <div className="flex gap-2">
-            <Input
-              readOnly
-              value={typeof window !== "undefined" ? window.location.href : ""}
-              className="text-sm text-muted-foreground"
-            />
-            <Button variant="outline" size="icon" onClick={handleCopyLink}>
-              {copied ? (
-                <Check className="h-4 w-4 text-green-500" />
-              ) : (
-                <Copy className="h-4 w-4" />
-              )}
-            </Button>
+          <div className="space-y-1">
+            <p className="text-sm font-medium">Invite link</p>
+            <div className="flex gap-2">
+              <Input
+                readOnly
+                value={inviteUrl}
+                className="text-sm text-muted-foreground"
+              />
+              <Button variant="outline" size="icon" onClick={handleCopyLink} disabled={!inviteUrl}>
+                {copied ? (
+                  <Check className="h-4 w-4 text-green-500" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
           </div>
 
           {collaborators.length > 0 && (

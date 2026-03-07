@@ -13,6 +13,7 @@ export const notes = sqliteTable(
     content: text("content").notNull(),
     lastUpdated: text("lastUpdated").default(sql`(current_timestamp)`),
     yjsState: blob("yjsState"),
+    inviteToken: text("inviteToken").unique(),
   },
   (table) => ({
     userIdx: index("idx_notes_userId").on(table.userId),

@@ -6,6 +6,7 @@ import {
   getNoteWithAccess,
   deleteNote,
   updateNoteTitleAsCollaborator,
+  getOrCreateInviteToken,
 } from "@/services/note.service";
 import {
   addCollaborator,
@@ -107,4 +108,19 @@ export async function fetchNoteCollaborators(noteId: string) {
   if (!access.canAccess) throw new Error("Unauthorized");
 
   return await getCollaboratorsForNote(noteId);
+}
+
+export async function getInviteLink(noteId: string) {
+  const { getUser } = getKindeServerSession();
+  const user = await getUser();
+  if (!user?.id) throw new Error("Unauthorized");
+
+  const ownerCheck = await isNoteOwner(noteId, user.id);
+  if (!ownerCheck)
+    throw new Error("Only the note owner can generate invite links");
+
+  const token = await getOrCreateInviteToken(noteId, user.id);
+  if (!token) throw new Error("Failed to generate invite link");
+
+  return token;
 }
