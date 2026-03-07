@@ -132,6 +132,14 @@ export default function NotePage() {
       <div className="flex flex-col h-full">
         {" "}
         <SlideIn direction="down">
+          <div className="px-4 mb-1 flex justify-end">
+            <CollaborationIndicator
+              isConnected={isConnected}
+              isSynced={isSynced}
+              activeUsers={activeUsers}
+              currentUserId={user?.id}
+            />
+          </div>
           <div className="flex flex-wrap items-center gap-3 px-4 mb-4">
             <HoverScale>
               <Button
@@ -155,13 +163,6 @@ export default function NotePage() {
             </div>
 
             <div className="flex items-center gap-3 flex-wrap">
-              <CollaborationIndicator
-                isConnected={isConnected}
-                isSynced={isSynced}
-                activeUsers={activeUsers}
-                currentUserId={user?.id}
-              />
-
               {noteId && (
                 <HoverScale>
                   <ShareNoteDialog noteId={noteId} isOwner={isOwner} />
