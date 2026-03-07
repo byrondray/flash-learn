@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { fetchFlashCardsAndNote } from "./actions";
-import { Loader2, RotateCcw, Plus, Layers } from "lucide-react";
+import { RotateCcw, Plus, Layers } from "lucide-react";
 import { motion } from "framer-motion";
 import {
   PageTransition,

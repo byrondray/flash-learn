@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Loader2, FileText, Plus } from "lucide-react";
+import { Search, FileText, Plus } from "lucide-react";
 import { formatTimeAgo } from "@/utils/formatTime";
 import {
   PageTransition,
