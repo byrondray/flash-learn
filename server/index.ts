@@ -1,6 +1,7 @@
 import { Server } from "@hocuspocus/server";
 import { Database } from "@hocuspocus/extension-database";
 import { TiptapTransformer } from "@hocuspocus/transformer";
+import { generateHTML } from "@tiptap/core";
 import { createClient } from "@libsql/client";
 import * as Y from "yjs";
 import "dotenv/config";
@@ -113,9 +114,10 @@ const server = Server.configure({
         try {
           const ydoc = new Y.Doc();
           Y.applyUpdate(ydoc, state);
-          const html = TiptapTransformer.fromYdoc(ydoc, "default");
+          const json = TiptapTransformer.fromYdoc(ydoc, "default");
           ydoc.destroy();
 
+          const html = generateHTML(json, tiptapExtensions);
           const lastUpdated = new Date().toISOString();
 
           await db.execute({
