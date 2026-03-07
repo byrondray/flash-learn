@@ -98,6 +98,33 @@ body {
   word-break: normal;
 }
 
+/* TipTap editor list styles */
+.ProseMirror ul {
+  list-style-type: disc;
+  padding-left: 1.5em;
+}
+
+.ProseMirror ol {
+  list-style-type: decimal;
+  padding-left: 1.5em;
+}
+
+.ProseMirror ul ul {
+  list-style-type: circle;
+}
+
+.ProseMirror ul ul ul {
+  list-style-type: square;
+}
+
+.ProseMirror li {
+  margin: 0.25em 0;
+}
+
+.ProseMirror li p {
+  margin: 0;
+}
+
 .collaboration-cursor__label {
   border-radius: 3px 3px 3px 0;
   color: #fff;
