@@ -525,23 +525,6 @@ export function RichTextEditor(props: RichTextEditorProps) {
         <ToolbarButton tooltip="Insert Table" onClick={addTable}>
           <TableIcon className="h-4 w-4" />
         </ToolbarButton>
-
-        <div className="flex-1" />
-
-        {/* Save Status */}
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          {props.isLoading ? (
-            <>
-              <Save className="h-3 w-3 animate-spin" />
-              <span>Saving...</span>
-            </>
-          ) : (
-            <>
-              <Clock className="h-3 w-3" />
-              <span>Saved {formatLastSaved(props.lastSaved ?? null)}</span>
-            </>
-          )}
-        </div>
       </div>
 
       {/* Bubble Menu for selected text */}
