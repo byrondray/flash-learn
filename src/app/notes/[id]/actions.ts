@@ -3,7 +3,6 @@
 import {
   updateNote,
   updateNoteTitle,
-  getNoteByIdForUser,
   getNoteWithAccess,
   deleteNote,
   updateNoteTitleAsCollaborator,

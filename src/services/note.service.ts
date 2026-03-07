@@ -1,7 +1,7 @@
 import { getDB } from "@/database/client";
 import { notes } from "@/database/schema/notes";
 import { noteCollaborators } from "@/database/schema/noteCollaborators";
-import { eq, and, desc, gte, or } from "drizzle-orm";
+import { eq, and, desc, gte } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 
 const db = getDB();
