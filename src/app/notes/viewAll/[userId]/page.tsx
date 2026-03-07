@@ -67,6 +67,7 @@ export default function NotesOverviewPage() {
 
   const stripHtml = (html: string | object) => {
     if (typeof html !== "string") return "";
+    if (html === "[object Object]") return "";
     return html.replace(/<[^>]+>/g, "");
   };
 
@@ -106,7 +107,8 @@ export default function NotesOverviewPage() {
   const filteredNotes = notes.filter(
     (note) =>
       note.notes.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      note.notes.content.toLowerCase().includes(searchTerm.toLowerCase())
+      (note.notes.content !== "[object Object]" &&
+        note.notes.content.toLowerCase().includes(searchTerm.toLowerCase()))
   );
   if (loading) {
     return (
