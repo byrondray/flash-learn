@@ -121,6 +121,25 @@ export async function getNoteWithAccess(noteId: string, userId: string) {
     };
   }
 
+  // Anyone with the link can join — auto-add as collaborator
+  const noteExists = await db
+    .select({ notes })
+    .from(notes)
+    .where(eq(notes.id, noteId));
+
+  if (noteExists.length > 0) {
+    await db
+      .insert(noteCollaborators)
+      .values({ noteId, userId, permission: "edit" })
+      .onConflictDoNothing();
+
+    return {
+      notes: noteExists[0].notes,
+      role: "collaborator" as const,
+      permission: "edit" as const,
+    };
+  }
+
   return null;
 }
 
