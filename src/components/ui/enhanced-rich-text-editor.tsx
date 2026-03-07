@@ -551,55 +551,25 @@ export function RichTextEditor(props: RichTextEditorProps) {
           tippyOptions={{ duration: 100 }}
           className="flex items-center gap-1 p-2 bg-popover border border-border rounded-lg shadow-lg"
         >
-          <Button
-            variant={editor.isActive("bold") ? "default" : "ghost"}
-            size="sm"
-            onClick={() => editor.chain().focus().toggleBold().run()}
-            className="h-8 w-8 p-0"
-          >
+          <ToolbarButton tooltip="Bold" onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive("bold")}>
             <Bold className="h-4 w-4" />
-          </Button>
-          <Button
-            variant={editor.isActive("italic") ? "default" : "ghost"}
-            size="sm"
-            onClick={() => editor.chain().focus().toggleItalic().run()}
-            className="h-8 w-8 p-0"
-          >
+          </ToolbarButton>
+          <ToolbarButton tooltip="Italic" onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive("italic")}>
             <Italic className="h-4 w-4" />
-          </Button>
-          <Button
-            variant={editor.isActive("underline") ? "default" : "ghost"}
-            size="sm"
-            onClick={() => editor.chain().focus().toggleUnderline().run()}
-            className="h-8 w-8 p-0"
-          >
+          </ToolbarButton>
+          <ToolbarButton tooltip="Underline" onClick={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive("underline")}>
             <UnderlineIcon className="h-4 w-4" />
-          </Button>
-          <Button
-            variant={editor.isActive("highlight") ? "default" : "ghost"}
-            size="sm"
-            onClick={() => editor.chain().focus().toggleHighlight().run()}
-            className="h-8 w-8 p-0"
-          >
+          </ToolbarButton>
+          <ToolbarButton tooltip="Highlight" onClick={() => editor.chain().focus().toggleHighlight().run()} active={editor.isActive("highlight")}>
             <Highlighter className="h-4 w-4" />
-          </Button>
-          <Button
-            variant={editor.isActive("link") ? "default" : "ghost"}
-            size="sm"
-            onClick={openLinkPopover}
-            className="h-8 w-8 p-0"
-          >
+          </ToolbarButton>
+          <ToolbarButton tooltip="Insert Link" onClick={openLinkPopover} active={editor.isActive("link")}>
             <LinkIcon className="h-4 w-4" />
-          </Button>
+          </ToolbarButton>
           {editor.isActive("link") && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={removeLink}
-              className="h-8 w-8 p-0 text-destructive"
-            >
+            <ToolbarButton tooltip="Remove Link" onClick={removeLink}>
               <Unlink className="h-4 w-4" />
-            </Button>
+            </ToolbarButton>
           )}
         </BubbleMenu>
       )}
