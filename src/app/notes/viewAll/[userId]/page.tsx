@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
-import { fetchUserNotes } from "./actions";
+import { fetchUserNotes, fetchSharedNotes } from "./actions";
 import {
   Card,
   CardContent,
@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, FileText, Plus } from "lucide-react";
+import { Search, FileText, Plus, Users } from "lucide-react";
 import { formatTimeAgo } from "@/utils/formatTime";
 import {
   PageTransition,
@@ -35,10 +35,23 @@ interface Note {
   };
 }
 
+interface SharedNote {
+  notes: {
+    id: string;
+    title: string;
+    content: string;
+    lastUpdated: string | null;
+    userId: string;
+  };
+  permission: string;
+  ownerEmail: string;
+}
+
 export default function NotesOverviewPage() {
   const { user } = useKindeBrowserClient();
   const router = useRouter();
   const [notes, setNotes] = useState<Note[]>([]);
+  const [sharedNotes, setSharedNotes] = useState<SharedNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -48,8 +61,12 @@ export default function NotesOverviewPage() {
     async function loadNotes() {
       if (!user?.id) return;
       try {
-        const data = await fetchUserNotes();
+        const [data, shared] = await Promise.all([
+          fetchUserNotes(),
+          fetchSharedNotes(),
+        ]);
         setNotes(data);
+        setSharedNotes(shared);
       } catch (error) {
         console.error("Error loading notes:", error);
       } finally {
@@ -175,6 +192,45 @@ export default function NotesOverviewPage() {
             <FadeIn>
               <div className="text-center py-12 text-muted-foreground">
                 No notes match your search
+              </div>
+            </FadeIn>
+          )}
+
+          {sharedNotes.length > 0 && (
+            <FadeIn delay={0.3}>
+              <div className="space-y-4 mt-8">
+                <div className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-muted-foreground" />
+                  <h2 className="text-xl font-semibold">Shared with me</h2>
+                </div>
+                <StaggerContainer className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 items-stretch">
+                  {sharedNotes.map((note) => (
+                    <StaggerItem key={note.notes.id}>
+                      <HoverScale scale={1.03}>
+                        <Card
+                          className="flex flex-col hover:shadow-lg transition-shadow cursor-pointer group min-h-[200px] border-primary/20"
+                          onClick={() => router.push(`/notes/${note.notes.id}`)}
+                        >
+                          <CardHeader>
+                            <CardTitle className="line-clamp-1 group-hover:text-primary">
+                              {note.notes.title || "Untitled Note"}
+                            </CardTitle>
+                            <CardDescription>
+                              Shared by {note.ownerEmail}
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="flex-1">
+                            <p className="text-sm text-muted-foreground line-clamp-3">
+                              {note.notes.content
+                                ? stripHtml(note.notes.content)
+                                : "No content"}
+                            </p>
+                          </CardContent>
+                        </Card>
+                      </HoverScale>
+                    </StaggerItem>
+                  ))}
+                </StaggerContainer>
               </div>
             </FadeIn>
           )}

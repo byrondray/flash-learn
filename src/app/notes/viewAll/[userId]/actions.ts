@@ -1,6 +1,7 @@
 "use server";
 
 import { getNotesForUser } from "@/services/note.service";
+import { getSharedNotesForUser } from "@/services/collaborator.service";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 
 export async function fetchUserNotes() {
@@ -26,4 +27,11 @@ export async function fetchUserNotes() {
 
     return dateB - dateA;
   });
+}
+
+export async function fetchSharedNotes() {
+  const { getUser } = getKindeServerSession();
+  const user = await getUser();
+  if (!user?.id) throw new Error("Unauthorized");
+  return await getSharedNotesForUser(user.id);
 }

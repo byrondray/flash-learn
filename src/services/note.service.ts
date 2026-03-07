@@ -1,6 +1,7 @@
 import { getDB } from "@/database/client";
 import { notes } from "@/database/schema/notes";
-import { eq, and, desc, gte } from "drizzle-orm";
+import { noteCollaborators } from "@/database/schema/noteCollaborators";
+import { eq, and, desc, gte, or } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 
 const db = getDB();
@@ -89,4 +90,61 @@ export async function getNoteByIdForUser(noteId: string, userId: string) {
     .from(notes)
     .where(and(eq(notes.id, noteId), eq(notes.userId, userId)));
   return r[0] ?? null;
+}
+
+export async function getNoteWithAccess(noteId: string, userId: string) {
+  const owned = await db
+    .select({ notes })
+    .from(notes)
+    .where(and(eq(notes.id, noteId), eq(notes.userId, userId)));
+
+  if (owned.length > 0) {
+    return { ...owned[0], role: "owner" as const };
+  }
+
+  const shared = await db
+    .select({ notes, permission: noteCollaborators.permission })
+    .from(noteCollaborators)
+    .innerJoin(notes, eq(noteCollaborators.noteId, notes.id))
+    .where(
+      and(
+        eq(noteCollaborators.noteId, noteId),
+        eq(noteCollaborators.userId, userId)
+      )
+    );
+
+  if (shared.length > 0) {
+    return {
+      notes: shared[0].notes,
+      role: "collaborator" as const,
+      permission: shared[0].permission as "edit" | "view",
+    };
+  }
+
+  return null;
+}
+
+export async function updateNoteAsCollaborator(
+  noteId: string,
+  title: string,
+  content: string
+) {
+  const lastUpdated = new Date().toISOString();
+  return await db
+    .update(notes)
+    .set({ title, content, lastUpdated })
+    .where(eq(notes.id, noteId))
+    .returning();
+}
+
+export async function updateNoteTitleAsCollaborator(
+  noteId: string,
+  title: string
+) {
+  const lastUpdated = new Date().toISOString();
+  return await db
+    .update(notes)
+    .set({ title, lastUpdated })
+    .where(eq(notes.id, noteId))
+    .returning();
 }

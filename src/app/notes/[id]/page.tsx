@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/motion";
 import { useCollaboration } from "@/hooks/useCollaboration";
 import { CollaborationIndicator } from "@/components/ui/collaboration-indicator";
+import { ShareNoteDialog } from "@/components/ui/share-note-dialog";
 
 export default function NotePage() {
   const { id } = useParams();
@@ -26,6 +27,7 @@ export default function NotePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
 
   const noteId = Array.isArray(id) ? id[0] : id;
 
@@ -54,6 +56,7 @@ export default function NotePage() {
         const note = await fetchNote(noteId);
         if (note) {
           setTitle(note.notes.title || "");
+          setIsOwner(note.role === "owner");
         } else {
           setError("Note not found");
         }
@@ -158,6 +161,10 @@ export default function NotePage() {
                 activeUsers={activeUsers}
                 currentUserId={user?.id}
               />
+
+              <HoverScale>
+                <ShareNoteDialog noteId={noteId} isOwner={isOwner} />
+              </HoverScale>
 
               <HoverScale>
                 <Button

@@ -18,6 +18,9 @@ export const metadata: Metadata = {
   title: "Flash Learn",
   description:
     "Ai note taking app that will turn notes into flash cards and quiz questions",
+  icons: {
+    icon: "/flash-learn-favicon.png",
+  },
 };
 
 export default async function RootLayout({
