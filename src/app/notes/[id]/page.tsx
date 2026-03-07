@@ -162,9 +162,11 @@ export default function NotePage() {
                 currentUserId={user?.id}
               />
 
-              <HoverScale>
-                <ShareNoteDialog noteId={noteId} isOwner={isOwner} />
-              </HoverScale>
+              {noteId && (
+                <HoverScale>
+                  <ShareNoteDialog noteId={noteId} isOwner={isOwner} />
+                </HoverScale>
+              )}
 
               <HoverScale>
                 <Button
