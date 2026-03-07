@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { fetchFlashCardsAndNote } from "./actions";
-import { Loader2, RotateCcw, Plus } from "lucide-react";
+import { Loader2, RotateCcw, Plus, Layers } from "lucide-react";
 import { motion } from "framer-motion";
 import {
   PageTransition,
@@ -14,8 +14,10 @@ import {
   HoverScale,
   StaggerContainer,
   StaggerItem,
-  SimpleFlip,
+  ThreeDFlip,
 } from "@/components/ui/motion";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface FlashCard {
   flashCards: {
@@ -75,12 +77,25 @@ export default function ViewFlashCardsPage() {
   if (isLoading) {
     return (
       <PageTransition>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center space-y-4">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto" />
-            <p className="text-sm text-muted-foreground">
-              Loading flashcards...
-            </p>
+        <div className="container mx-auto py-8 space-y-6">
+          <div className="flex justify-between items-center">
+            <div className="space-y-2">
+              <Skeleton className="h-8 w-40" />
+              <Skeleton className="h-5 w-56" />
+            </div>
+            <Skeleton className="h-10 w-28" />
+          </div>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Card key={i} className="h-full">
+                <CardHeader>
+                  <Skeleton className="h-5 w-24" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-24 w-full" />
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </PageTransition>
@@ -112,22 +127,13 @@ export default function ViewFlashCardsPage() {
         </SlideIn>
 
         {flashcards.length === 0 ? (
-          <FadeIn delay={0.2}>
-            <div className="text-center py-12">
-              <p className="text-muted-foreground mb-4">
-                No flashcards found for this note.
-              </p>
-              <HoverScale>
-                <Button
-                  className="mt-4"
-                  onClick={() => router.push(`/flashCards/create/${id}`)}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Flashcards
-                </Button>
-              </HoverScale>
-            </div>
-          </FadeIn>
+          <EmptyState
+            icon={Layers}
+            title="No Flashcards Yet"
+            description="Generate flashcards from your note to start studying"
+            actionLabel="Create Flashcards"
+            onAction={() => router.push(`/flashCards/create/${id}`)}
+          />
         ) : (
           <StaggerContainer className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {" "}
@@ -159,23 +165,20 @@ export default function ViewFlashCardsPage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <SimpleFlip
+                      <ThreeDFlip
                         isFlipped={flippedCards[card.flashCards.id] || false}
                         frontContent={
-                          <div className="min-h-[100px] flex items-center justify-center text-center">
+                          <div className="min-h-[100px] flex items-center justify-center text-center p-4">
                             {card.flashCards.question}
                           </div>
                         }
                         backContent={
-                          <div className="min-h-[100px] flex items-center justify-center text-center">
+                          <div className="min-h-[100px] flex items-center justify-center text-center p-4">
                             {card.flashCards.answer}
                           </div>
                         }
-                        className="mb-4"
+                        className="mb-4 min-h-[100px]"
                       />
-                      <p className="text-xs text-muted-foreground text-center">
-                        Click to flip
-                      </p>
                     </CardContent>
                   </Card>
                 </HoverScale>

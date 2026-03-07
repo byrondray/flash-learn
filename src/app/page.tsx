@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getThreeMostRecentNotesForUser } from "@/services/note.service";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
-import { BarChart, BookOpen, Brain, Plus } from "lucide-react";
+import { ArrowRight, BarChart, BookOpen, Brain, Plus } from "lucide-react";
 import Link from "next/link";
 import { formatTimeAgo } from "@/utils/formatTime";
 import { getMostRecentTestScoreForUser } from "@/services/testScores.service";
@@ -154,15 +154,15 @@ export default async function Home() {
           <StaggerItem>
             <HoverScale scale={1.02}>
               <Link href={`/quizQuestions/allTests/${user.id}`}>
-                <Card className="cursor-pointer hover:bg-accent/50 transition-colors">
+                <Card className="cursor-pointer hover:bg-primary/5 transition-colors border-primary/20 border-2">
                   <CardHeader className="flex flex-row items-center justify-between pb-2">
                     <CardTitle className="text-sm font-medium">
                       Take Quiz
                     </CardTitle>
-                    <BarChart className="h-4 w-4 text-muted-foreground" />
+                    <ArrowRight className="h-4 w-4 text-primary" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">Start</div>
+                    <div className="text-2xl font-bold text-primary">Start</div>
                     <p className="text-xs text-muted-foreground">
                       Test your knowledge
                     </p>

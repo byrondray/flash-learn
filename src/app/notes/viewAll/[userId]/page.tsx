@@ -23,6 +23,8 @@ import {
   StaggerContainer,
   StaggerItem,
 } from "@/components/ui/motion";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Note {
   notes: {
@@ -65,8 +67,34 @@ export default function NotesOverviewPage() {
   if (loading) {
     return (
       <PageTransition>
-        <div className="flex items-center justify-center min-h-screen">
-          <Loader2 className="h-8 w-8 animate-spin" />
+        <div className="container mx-auto py-8">
+          <div className="space-y-6">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="space-y-2">
+                <Skeleton className="h-9 w-48" />
+                <Skeleton className="h-5 w-64" />
+              </div>
+              <div className="flex gap-4">
+                <Skeleton className="h-10 w-64" />
+                <Skeleton className="h-10 w-28" />
+              </div>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Card key={i} className="min-h-[200px]">
+                  <CardHeader>
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-1/2 mt-2" />
+                  </CardHeader>
+                  <CardContent>
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-5/6 mt-2" />
+                    <Skeleton className="h-4 w-2/3 mt-2" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
         </div>
       </PageTransition>
     );
@@ -104,30 +132,20 @@ export default function NotesOverviewPage() {
           </SlideIn>
 
           {notes.length === 0 ? (
-            <FadeIn delay={0.2}>
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-                  <p className="text-lg font-medium">No Notes Yet</p>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Start by creating your first note
-                  </p>
-                  <HoverScale>
-                    <Button onClick={() => router.push("/notes/newNote")}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create Note
-                    </Button>
-                  </HoverScale>
-                </CardContent>
-              </Card>
-            </FadeIn>
+            <EmptyState
+              icon={FileText}
+              title="No Notes Yet"
+              description="Start by creating your first note"
+              actionLabel="Create Note"
+              onAction={() => router.push("/notes/newNote")}
+            />
           ) : (
             <StaggerContainer className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 items-stretch">
               {filteredNotes.map((note) => (
                 <StaggerItem key={note.notes.id}>
                   <HoverScale scale={1.03}>
                     <Card
-                      className="flex flex-col hover:shadow-lg transition-shadow cursor-pointer group h-60"
+                      className="flex flex-col hover:shadow-lg transition-shadow cursor-pointer group min-h-[200px]"
                       onClick={() => router.push(`/notes/${note.notes.id}`)}
                     >
                       <CardHeader>

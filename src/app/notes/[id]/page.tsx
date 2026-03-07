@@ -129,7 +129,7 @@ export default function NotePage() {
       <div className="flex flex-col h-full">
         {" "}
         <SlideIn direction="down">
-          <div className="flex items-center gap-4 px-4 mb-4">
+          <div className="flex flex-wrap items-center gap-3 px-4 mb-4">
             <HoverScale>
               <Button
                 variant="ghost"
@@ -140,7 +140,7 @@ export default function NotePage() {
                 Back
               </Button>
             </HoverScale>
-            <div className="flex-1">
+            <div className="flex-1 min-w-[200px]">
               <FadeIn delay={0.1}>
                 <Input
                   placeholder="Note title"
@@ -151,31 +151,37 @@ export default function NotePage() {
               </FadeIn>
             </div>
 
-            <CollaborationIndicator
-              isConnected={isConnected}
-              isSynced={isSynced}
-              activeUsers={activeUsers}
-              currentUserId={user?.id}
-            />
+            <div className="flex items-center gap-3 flex-wrap">
+              <CollaborationIndicator
+                isConnected={isConnected}
+                isSynced={isSynced}
+                activeUsers={activeUsers}
+                currentUserId={user?.id}
+              />
 
-            <HoverScale>
-              <Button
-                variant="outline"
-                onClick={() => router.push(`/flashCards/create/${noteId}`)}
-              >
-                <Brain className="h-4 w-4 mr-2" />
-                Create Flash Cards
-              </Button>
-            </HoverScale>
-            <HoverScale>
-              <Button
-                variant="outline"
-                onClick={() => router.push(`/quizQuestions/create/${noteId}`)}
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                Create Quiz
-              </Button>
-            </HoverScale>
+              <HoverScale>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => router.push(`/flashCards/create/${noteId}`)}
+                >
+                  <Brain className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Create Flash Cards</span>
+                  <span className="sm:hidden">Cards</span>
+                </Button>
+              </HoverScale>
+              <HoverScale>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => router.push(`/quizQuestions/create/${noteId}`)}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Create Quiz</span>
+                  <span className="sm:hidden">Quiz</span>
+                </Button>
+              </HoverScale>
+            </div>
           </div>
         </SlideIn>{" "}
         <FadeIn delay={0.2} className="flex-1 px-4">

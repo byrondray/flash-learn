@@ -1,16 +1,21 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ReactNode } from "react";
 
-// Page transition wrapper
+function useMotionSafe() {
+  const prefersReduced = useReducedMotion();
+  return !prefersReduced;
+}
+
 export function PageTransition({ children }: { children: ReactNode }) {
+  const animate = useMotionSafe();
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={animate ? { opacity: 0, y: 20 } : false}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.3, ease: "easeInOut" }}
+      exit={animate ? { opacity: 0, y: -20 } : undefined}
+      transition={animate ? { duration: 0.3, ease: "easeInOut" } : { duration: 0 }}
     >
       {children}
     </motion.div>
@@ -25,6 +30,7 @@ export function StaggerContainer({
   children: ReactNode;
   className?: string;
 }) {
+  const animate = useMotionSafe();
   return (
     <motion.div
       className={className}
@@ -34,10 +40,9 @@ export function StaggerContainer({
         hidden: { opacity: 0 },
         visible: {
           opacity: 1,
-          transition: {
-            delayChildren: 0.1,
-            staggerChildren: 0.05,
-          },
+          transition: animate
+            ? { delayChildren: 0.1, staggerChildren: 0.05 }
+            : { duration: 0 },
         },
       }}
     >
@@ -81,6 +86,7 @@ export function SlideIn({
   direction?: "left" | "right" | "up" | "down";
   className?: string;
 }) {
+  const animate = useMotionSafe();
   const variants = {
     left: { x: -50, opacity: 0 },
     right: { x: 50, opacity: 0 },
@@ -91,9 +97,9 @@ export function SlideIn({
   return (
     <motion.div
       className={className}
-      initial={variants[direction]}
+      initial={animate ? variants[direction] : false}
       animate={{ x: 0, y: 0, opacity: 1 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
+      transition={animate ? { duration: 0.4, ease: "easeOut" } : { duration: 0 }}
     >
       {children}
     </motion.div>
@@ -130,11 +136,12 @@ export function HoverScale({
   scale?: number;
   className?: string;
 }) {
+  const animate = useMotionSafe();
   return (
     <motion.div
       className={className}
-      whileHover={{ scale }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={animate ? { scale } : undefined}
+      whileTap={animate ? { scale: 0.98 } : undefined}
       transition={{ duration: 0.2 }}
     >
       {children}

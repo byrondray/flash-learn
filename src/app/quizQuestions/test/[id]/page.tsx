@@ -16,7 +16,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { fetchQuizQuestions, saveTestScore } from "./actions";
-import { Loader2, ArrowRight, ArrowLeft, CheckCircle } from "lucide-react";
+import { Loader2, ArrowRight, ArrowLeft, CheckCircle, XCircle } from "lucide-react";
 import {
   PageTransition,
   SlideIn,
@@ -177,6 +177,35 @@ export default function TestPage() {
                   >
                     <Progress value={score} className="w-full" />
                   </motion.div>
+
+                  <div className="space-y-2 pt-4">
+                    <p className="text-sm font-medium text-muted-foreground">Question Breakdown</p>
+                    {questions.map((q, idx) => {
+                      const isCorrect = selectedAnswers[idx] === q.correctAnswer;
+                      return (
+                        <motion.div
+                          key={q.id}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.6 + idx * 0.05 }}
+                          className={`flex items-center gap-3 rounded-lg border p-3 text-sm ${
+                            isCorrect
+                              ? "border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950"
+                              : "border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950"
+                          }`}
+                        >
+                          {isCorrect ? (
+                            <CheckCircle className="h-4 w-4 shrink-0 text-green-600" />
+                          ) : (
+                            <XCircle className="h-4 w-4 shrink-0 text-red-600" />
+                          )}
+                          <span className="line-clamp-1 flex-1">
+                            Q{idx + 1}: {q.question}
+                          </span>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
                 </CardContent>
                 <CardFooter className="flex justify-end gap-4">
                   <HoverScale>
@@ -258,21 +287,44 @@ export default function TestPage() {
                       onValueChange={handleAnswer}
                       disabled={showExplanation}
                     >
-                      {currentQ.options.map((option, index) => (
-                        <motion.div
-                          key={option.id}
-                          className="flex items-center gap-2"
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.1 * index }}
-                        >
-                          <RadioGroupItem
-                            value={option.optionText}
-                            id={option.id}
-                          />
-                          <Label htmlFor={option.id}>{option.optionText}</Label>
-                        </motion.div>
-                      ))}
+                      {currentQ.options.map((option, index) => {
+                        const isSelected = selectedAnswers[currentQuestion] === option.optionText;
+                        const isCorrectOption = option.optionText === currentQ.correctAnswer;
+                        const showResult = showExplanation;
+
+                        let optionStyle = "";
+                        if (showResult && isCorrectOption) {
+                          optionStyle = "rounded-lg border border-green-300 bg-green-50 dark:border-green-800 dark:bg-green-950 p-2";
+                        } else if (showResult && isSelected && !isCorrectOption) {
+                          optionStyle = "rounded-lg border border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950 p-2";
+                        } else {
+                          optionStyle = "rounded-lg border border-transparent p-2";
+                        }
+
+                        return (
+                          <motion.div
+                            key={option.id}
+                            className={`flex items-center gap-2 transition-colors ${optionStyle}`}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.1 * index }}
+                          >
+                            <RadioGroupItem
+                              value={option.optionText}
+                              id={option.id}
+                            />
+                            <Label htmlFor={option.id} className="flex-1 cursor-pointer">
+                              {option.optionText}
+                            </Label>
+                            {showResult && isCorrectOption && (
+                              <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
+                            )}
+                            {showResult && isSelected && !isCorrectOption && (
+                              <XCircle className="h-4 w-4 text-red-600 shrink-0" />
+                            )}
+                          </motion.div>
+                        );
+                      })}
                     </RadioGroup>
                   </motion.div>
 

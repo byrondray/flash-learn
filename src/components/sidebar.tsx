@@ -92,7 +92,7 @@ function SidebarContent() {
       href: userId ? `/notes/viewAll/${userId}` : "/notes/viewAll/placeholder",
       label: "Notes",
       icon: FileText,
-      isActive: pathname.includes("/notes/viewAll"),
+      isActive: pathname.startsWith("/notes"),
       disabled: !userId,
     },
     {
@@ -101,7 +101,7 @@ function SidebarContent() {
         : "/quizQuestions/allTests/placeholder",
       label: "Quiz Questions",
       icon: BookOpen,
-      isActive: pathname.includes("/quizQuestions/allTests"),
+      isActive: pathname.startsWith("/quizQuestions"),
       disabled: !userId,
     },
     {
@@ -110,7 +110,7 @@ function SidebarContent() {
         : "/flashCards/viewAll/placeholder",
       label: "Flashcards",
       icon: Brain,
-      isActive: pathname.includes("/flashCards/viewAll"),
+      isActive: pathname.startsWith("/flashCards"),
       disabled: !userId,
     },
   ];
