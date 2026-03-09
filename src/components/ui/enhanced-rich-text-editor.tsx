@@ -70,8 +70,11 @@ function ToolbarButton(props: {
           <Button
             variant={props.active ? "default" : "ghost"}
             size="sm"
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={props.onClick}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              props.onClick();
+            }}
+            onClick={(e) => e.preventDefault()}
             disabled={props.disabled}
             className="h-8 w-8 p-0"
           >
@@ -270,6 +273,44 @@ export function RichTextEditor(props: RichTextEditorProps) {
       .run();
   }, [editor]);
 
+  const setAlignForCurrentBlock = useCallback((alignment: string) => {
+    if (!editor) return;
+    const { view, state } = editor;
+
+    const domSelection = window.getSelection();
+    if (!domSelection || domSelection.rangeCount === 0) return;
+
+    let domNode: Node | null = domSelection.anchorNode;
+    let blockEl: HTMLElement | null = null;
+    while (domNode && domNode !== view.dom) {
+      if (domNode instanceof HTMLElement) {
+        const tag = domNode.tagName;
+        if (tag === "P" || /^H[1-6]$/.test(tag)) {
+          blockEl = domNode;
+          break;
+        }
+      }
+      domNode = domNode.parentNode;
+    }
+    if (!blockEl) return;
+
+    const pmPos = view.posAtDOM(blockEl, 0);
+    const $pos = state.doc.resolve(pmPos);
+    for (let depth = $pos.depth; depth > 0; depth--) {
+      const node = $pos.node(depth);
+      if (node.type.name === "paragraph" || node.type.name === "heading") {
+        const pos = $pos.before(depth);
+        view.dispatch(
+          state.tr.setNodeMarkup(pos, undefined, {
+            ...node.attrs,
+            textAlign: alignment,
+          })
+        );
+        return;
+      }
+    }
+  }, [editor]);
+
   if (!editor) {
     return null;
   }
@@ -411,13 +452,13 @@ export function RichTextEditor(props: RichTextEditorProps) {
         <Separator orientation="vertical" className="h-6" />
 
         {/* Text Alignment */}
-        <ToolbarButton tooltip="Align Left" onClick={() => editor.chain().focus().setTextAlign("left").run()} active={editor.isActive({ textAlign: "left" })}>
+        <ToolbarButton tooltip="Align Left" onClick={() => setAlignForCurrentBlock("left")} active={editor.isActive({ textAlign: "left" })}>
           <AlignLeft className="h-4 w-4" />
         </ToolbarButton>
-        <ToolbarButton tooltip="Align Center" onClick={() => editor.chain().focus().setTextAlign("center").run()} active={editor.isActive({ textAlign: "center" })}>
+        <ToolbarButton tooltip="Align Center" onClick={() => setAlignForCurrentBlock("center")} active={editor.isActive({ textAlign: "center" })}>
           <AlignCenter className="h-4 w-4" />
         </ToolbarButton>
-        <ToolbarButton tooltip="Align Right" onClick={() => editor.chain().focus().setTextAlign("right").run()} active={editor.isActive({ textAlign: "right" })}>
+        <ToolbarButton tooltip="Align Right" onClick={() => setAlignForCurrentBlock("right")} active={editor.isActive({ textAlign: "right" })}>
           <AlignRight className="h-4 w-4" />
         </ToolbarButton>
 
