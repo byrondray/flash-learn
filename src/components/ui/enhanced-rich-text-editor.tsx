@@ -210,7 +210,7 @@ export function RichTextEditor(props: RichTextEditorProps) {
       TableCell,
       CharacterCount,
     ],
-    content: isCollab ? undefined : props.content,
+    content: props.content || undefined,
     editorProps: {
       attributes: {
         class:
@@ -218,9 +218,7 @@ export function RichTextEditor(props: RichTextEditorProps) {
       },
     },
     onUpdate: ({ editor }) => {
-      if (!isCollab) {
-        props.onChange(editor.getHTML());
-      }
+      props.onChange(editor.getHTML());
     },
   }, [props.provider]);
 

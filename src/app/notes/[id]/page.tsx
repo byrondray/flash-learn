@@ -5,7 +5,7 @@ import { useDebounce } from "use-debounce";
 import { RichTextEditor } from "@/components/ui/enhanced-rich-text-editor";
 import { Input } from "@/components/ui/input";
 import { useParams, useRouter } from "next/navigation";
-import { updateExistingNoteTitle, fetchNote, deleteExistingNote } from "./actions";
+import { updateExistingNoteTitle, updateExistingNote, fetchNote, deleteExistingNote } from "./actions";
 import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
 import { Button } from "@/components/ui/button";
 import { FileText, Brain, Loader2, ArrowLeft, Trash2 } from "lucide-react";
@@ -32,6 +32,7 @@ export default function NotePage() {
   const router = useRouter();
   const { user } = useKindeBrowserClient();
   const [title, setTitle] = useState("");
+  const [noteContent, setNoteContent] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -43,6 +44,7 @@ export default function NotePage() {
   const noteId = Array.isArray(id) ? id[0] : id;
 
   const [debouncedTitle] = useDebounce(title, 2000);
+  const [debouncedContent] = useDebounce(noteContent, 2000);
 
   const collabUrl =
     process.env.NEXT_PUBLIC_COLLAB_URL || "ws://localhost:8080";
@@ -67,6 +69,7 @@ export default function NotePage() {
         const note = await fetchNote(noteId);
         if (note) {
           setTitle(note.notes.title || "");
+          setNoteContent(note.notes.content || "");
           setIsOwner(note.role === "owner");
           if (note.role === "collaborator" && note.permission) {
             setPermission(note.permission);
@@ -106,6 +109,18 @@ export default function NotePage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTitle(e.target.value);
   };
+
+  const handleContentChange = useCallback((html: string) => {
+    setNoteContent(html);
+  }, []);
+
+  useEffect(() => {
+    if (!isLoading && debouncedContent && noteId && user?.id && !isConnected) {
+      updateExistingNote(noteId, title, debouncedContent).catch((err) =>
+        console.error("Error saving content:", err)
+      );
+    }
+  }, [debouncedContent, isLoading, noteId, user?.id, isConnected]);
 
   const canEdit = isOwner || permission === "edit";
 
@@ -240,8 +255,8 @@ export default function NotePage() {
         </SlideIn>{" "}
         <FadeIn delay={0.2} className="flex-1 px-4">
           <RichTextEditor
-            content=""
-            onChange={() => {}}
+            content={noteContent}
+            onChange={handleContentChange}
             ydoc={ydoc}
             provider={provider}
             userName={user?.given_name || user?.email || undefined}
