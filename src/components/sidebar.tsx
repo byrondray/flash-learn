@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Home, BookOpen, Brain, FileText } from "lucide-react";
+import { Menu, Home, BookOpen, Brain, FileText, LogOut } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
 import { motion, AnimatePresence } from "framer-motion";
@@ -207,6 +207,21 @@ function SidebarContent() {
             );
           })}
         </StaggerContainer>
+      </div>
+
+      <div className="px-3 py-4 mt-auto border-t">
+        <HoverScale scale={1.02}>
+          <Button
+            variant="ghost"
+            className="w-full justify-start text-muted-foreground hover:text-destructive"
+            asChild
+          >
+            <a href="/api/auth/logout">
+              <LogOut className="mr-2 h-4 w-4" />
+              Log out
+            </a>
+          </Button>
+        </HoverScale>
       </div>
     </ScrollArea>
   );
