@@ -18,10 +18,17 @@ interface CollaborationIndicatorProps {
 }
 
 export function CollaborationIndicator(props: CollaborationIndicatorProps) {
-  const currentUser = props.activeUsers.find(
+  const uniqueUsers = Array.from(
+    new Map(
+      props.activeUsers
+        .filter((u) => u.userId)
+        .map((u) => [u.userId, u])
+    ).values()
+  );
+  const currentUser = uniqueUsers.find(
     (u) => u.userId === props.currentUserId
   );
-  const otherUsers = props.activeUsers.filter(
+  const otherUsers = uniqueUsers.filter(
     (u) => u.userId !== props.currentUserId
   );
   const allDisplayUsers = [

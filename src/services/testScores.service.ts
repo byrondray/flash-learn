@@ -6,6 +6,15 @@ import { v4 as uuid } from "uuid";
 import { eq, and, desc } from "drizzle-orm";
 import { quizQuestions } from "@/database/schema/quizQuestions";
 
+const noteColumns = {
+  id: notes.id,
+  userId: notes.userId,
+  title: notes.title,
+  content: notes.content,
+  lastUpdated: notes.lastUpdated,
+  inviteToken: notes.inviteToken,
+};
+
 const db = getDB();
 
 export async function createTestScore(
@@ -75,7 +84,7 @@ export const getTestScoresForDate = async (date: string) => {
 
 export const getTestScoresForUser = async (userId: string) => {
   return await db
-    .select({ testScores, notes })
+    .select({ testScores, notes: noteColumns })
     .from(testScores)
     .innerJoin(quizQuestions, eq(testScores.quizQuestionId, quizQuestions.id))
     .innerJoin(notes, eq(quizQuestions.noteId, notes.id))

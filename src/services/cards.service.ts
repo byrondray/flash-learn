@@ -1,5 +1,14 @@
 import { getDB } from "@/database/client";
 import { notes } from "@/database/schema/notes";
+
+const noteColumns = {
+  id: notes.id,
+  userId: notes.userId,
+  title: notes.title,
+  content: notes.content,
+  lastUpdated: notes.lastUpdated,
+  inviteToken: notes.inviteToken,
+};
 import { flashCards } from "@/database/schema/flashCards";
 import { v4 as uuid } from "uuid";
 import { eq, and } from "drizzle-orm";
@@ -24,7 +33,7 @@ export async function updateFlashCard(
   answer: string
 ) {
   const card = await db
-    .select({ flashCards, notes })
+    .select({ flashCards, notes: noteColumns })
     .from(flashCards)
     .innerJoin(notes, eq(flashCards.noteId, notes.id))
     .where(and(eq(flashCards.id, flashCardId), eq(notes.userId, userId)));
@@ -40,7 +49,7 @@ export async function updateFlashCard(
 
 export async function deleteFlashCard(flashCardId: string, userId: string) {
   const card = await db
-    .select({ flashCards, notes })
+    .select({ flashCards, notes: noteColumns })
     .from(flashCards)
     .innerJoin(notes, eq(flashCards.noteId, notes.id))
     .where(and(eq(flashCards.id, flashCardId), eq(notes.userId, userId)));
@@ -59,7 +68,7 @@ export async function getFlashCardsForNoteId(noteId: string) {
 
 export async function getFlashCardsForUser(userId: string) {
   return await db
-    .select({ flashCards, notes })
+    .select({ flashCards, notes: noteColumns })
     .from(flashCards)
     .innerJoin(notes, eq(flashCards.noteId, notes.id))
     .where(eq(notes.userId, userId));

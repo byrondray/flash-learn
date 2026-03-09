@@ -5,6 +5,11 @@ import { generateHTML } from "@tiptap/core";
 import { createClient } from "@libsql/client";
 import * as Y from "yjs";
 import "dotenv/config";
+import { JSDOM } from "jsdom";
+
+const dom = new JSDOM("<!DOCTYPE html><html><body></body></html>");
+(globalThis as Record<string, unknown>).window = dom.window;
+(globalThis as Record<string, unknown>).document = dom.window.document;
 
 import StarterKit from "@tiptap/starter-kit";
 import TextStyle from "@tiptap/extension-text-style";
@@ -76,7 +81,9 @@ const server = Server.configure({
           });
 
           const row = result.rows[0];
-          if (!row) return null;
+          if (!row) {
+            return null;
+          }
 
           if (row.yjsState) {
             const raw = row.yjsState;
@@ -93,19 +100,25 @@ const server = Server.configure({
           }
 
           const htmlContent = (row.content as string) || "";
-          if (!htmlContent) return null;
+          if (!htmlContent || htmlContent.length < 3) return null;
 
-          const ydoc = TiptapTransformer.toYdoc(
-            htmlContent,
-            "default",
-            tiptapExtensions
-          );
-          const state = Y.encodeStateAsUpdate(ydoc);
-          ydoc.destroy();
+          const safeHtml = htmlContent.startsWith("<")
+            ? htmlContent
+            : `<p>${htmlContent}</p>`;
 
-          return state;
-        } catch (error) {
-          console.error(`Failed to fetch document ${documentName}:`, error);
+          try {
+            const ydoc = TiptapTransformer.toYdoc(
+              safeHtml,
+              "default",
+              tiptapExtensions
+            );
+            const state = Y.encodeStateAsUpdate(ydoc);
+            ydoc.destroy();
+            return state;
+          } catch {
+            return null;
+          }
+        } catch {
           return null;
         }
       },
@@ -126,16 +139,10 @@ const server = Server.configure({
             sql: "UPDATE notes SET yjsState = ?, content = ?, lastUpdated = ? WHERE id = ?",
             args: [Buffer.from(state), html, lastUpdated, documentName],
           });
-        } catch (error) {
-          console.error(`Failed to store document ${documentName}:`, error);
-        }
+        } catch {}
       },
     }),
   ],
 });
 
 server.listen();
-
-console.log(
-  `Hocuspocus collaboration server running on port ${process.env.PORT || 8080}`
-);

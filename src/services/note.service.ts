@@ -6,6 +6,15 @@ import { v4 as uuid } from "uuid";
 
 const db = getDB();
 
+const noteColumns = {
+  id: notes.id,
+  userId: notes.userId,
+  title: notes.title,
+  content: notes.content,
+  lastUpdated: notes.lastUpdated,
+  inviteToken: notes.inviteToken,
+};
+
 export async function createNote(
   userId: string,
   title: string,
@@ -51,17 +60,23 @@ export async function deleteNote(noteId: string, userId: string) {
 }
 
 export async function getNotesForUser(userId: string) {
-  return await db.select({ notes }).from(notes).where(eq(notes.userId, userId));
+  return await db
+    .select({ notes: noteColumns })
+    .from(notes)
+    .where(eq(notes.userId, userId));
 }
 
 export async function getNoteById(noteId: string) {
-  const r = await db.select({ notes }).from(notes).where(eq(notes.id, noteId));
+  const r = await db
+    .select({ notes: noteColumns })
+    .from(notes)
+    .where(eq(notes.id, noteId));
   return r[0];
 }
 
 export async function getThreeMostRecentNotesForUser(userId: string) {
   return await db
-    .select({ notes })
+    .select({ notes: noteColumns })
     .from(notes)
     .where(eq(notes.userId, userId))
     .orderBy(desc(notes.lastUpdated))
@@ -73,7 +88,7 @@ export async function getNotesForUserEditedThisWeek(userId: string) {
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
   return await db
-    .select({ notes })
+    .select({ notes: noteColumns })
     .from(notes)
     .where(
       and(
@@ -86,7 +101,7 @@ export async function getNotesForUserEditedThisWeek(userId: string) {
 
 export async function getNoteByIdForUser(noteId: string, userId: string) {
   const r = await db
-    .select({ notes })
+    .select({ notes: noteColumns })
     .from(notes)
     .where(and(eq(notes.id, noteId), eq(notes.userId, userId)));
   return r[0] ?? null;
@@ -94,7 +109,7 @@ export async function getNoteByIdForUser(noteId: string, userId: string) {
 
 export async function getNoteWithAccess(noteId: string, userId: string) {
   const owned = await db
-    .select({ notes })
+    .select({ notes: noteColumns })
     .from(notes)
     .where(and(eq(notes.id, noteId), eq(notes.userId, userId)));
 
@@ -103,7 +118,7 @@ export async function getNoteWithAccess(noteId: string, userId: string) {
   }
 
   const shared = await db
-    .select({ notes, permission: noteCollaborators.permission })
+    .select({ notes: noteColumns, permission: noteCollaborators.permission })
     .from(noteCollaborators)
     .innerJoin(notes, eq(noteCollaborators.noteId, notes.id))
     .where(
@@ -170,7 +185,7 @@ export async function getOrCreateInviteToken(noteId: string, userId: string) {
 
 export async function getNoteByInviteToken(token: string) {
   const r = await db
-    .select({ notes })
+    .select({ notes: noteColumns })
     .from(notes)
     .where(eq(notes.inviteToken, token));
   return r[0] ?? null;
