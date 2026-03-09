@@ -2,7 +2,7 @@
 
 FlashLearn is an AI-powered learning platform that transforms your notes into interactive study materials. Using advanced natural language processing, it automatically generates flashcards, quizzes, and study guides from your notes, making learning more efficient and effective.
 
-🔗 **[Try FlashLearn Now](https://flash-learn-production.up.railway.app/)**
+🔗 **[Try FlashLearn Now](https://www.flashlearn.ca/)**
 
 ## Features
 
@@ -23,4 +23,4 @@ FlashLearn is an AI-powered learning platform that transforms your notes into in
 - **Database**: SQLite
 - **Authentication**: Kinde
 - **AI Integration**: OpenAI API
-- **Deployment**: Vercel
+- **Deployment**: Railway
