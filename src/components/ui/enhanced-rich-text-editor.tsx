@@ -70,6 +70,7 @@ function ToolbarButton(props: {
           <Button
             variant={props.active ? "default" : "ghost"}
             size="sm"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={props.onClick}
             disabled={props.disabled}
             className="h-8 w-8 p-0"

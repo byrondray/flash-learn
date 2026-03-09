@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useDebounce } from "use-debounce";
 import { RichTextEditor } from "@/components/ui/enhanced-rich-text-editor";
 import { Input } from "@/components/ui/input";
@@ -35,8 +35,9 @@ export default function NotePage() {
   const [noteContent, setNoteContent] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
+  const titleRef = useRef(title);
+  titleRef.current = title;
   const [permission, setPermission] = useState<"edit" | "view">("edit");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -94,16 +95,9 @@ export default function NotePage() {
   useEffect(() => {
     if (!initialLoadDone || !debouncedTitle || !noteId || !user?.id) return;
     let cancelled = false;
-    (async () => {
-      setIsSaving(true);
-      try {
-        await updateExistingNoteTitle(noteId, debouncedTitle);
-      } catch (err) {
-        if (!cancelled) console.error("Error saving title:", err);
-      } finally {
-        if (!cancelled) setIsSaving(false);
-      }
-    })();
+    updateExistingNoteTitle(noteId, debouncedTitle).catch((err) => {
+      if (!cancelled) console.error("Error saving title:", err);
+    });
     return () => { cancelled = true; };
   }, [debouncedTitle, initialLoadDone, noteId, user?.id]);
 
@@ -117,7 +111,7 @@ export default function NotePage() {
 
   useEffect(() => {
     if (!initialLoadDone || !debouncedContent || !noteId || !user?.id || isConnected) return;
-    updateExistingNote(noteId, title, debouncedContent).catch((err) =>
+    updateExistingNote(noteId, titleRef.current, debouncedContent).catch((err) =>
       console.error("Error saving content:", err)
     );
   }, [debouncedContent, initialLoadDone, noteId, user?.id, isConnected]);
