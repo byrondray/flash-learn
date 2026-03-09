@@ -23,7 +23,7 @@ export async function createNote(
   return await db
     .insert(notes)
     .values({ id: uuid(), userId, title, content })
-    .returning();
+    .returning(noteColumns);
 }
 
 export async function updateNote(
@@ -37,7 +37,7 @@ export async function updateNote(
     .update(notes)
     .set({ title, content, lastUpdated })
     .where(and(eq(notes.id, noteId), eq(notes.userId, userId)))
-    .returning();
+    .returning(noteColumns);
 }
 
 export async function updateNoteTitle(
@@ -50,7 +50,7 @@ export async function updateNoteTitle(
     .update(notes)
     .set({ title, lastUpdated })
     .where(and(eq(notes.id, noteId), eq(notes.userId, userId)))
-    .returning();
+    .returning(noteColumns);
 }
 
 export async function deleteNote(noteId: string, userId: string) {
@@ -149,7 +149,7 @@ export async function updateNoteAsCollaborator(
     .update(notes)
     .set({ title, content, lastUpdated })
     .where(eq(notes.id, noteId))
-    .returning();
+    .returning(noteColumns);
 }
 
 export async function updateNoteTitleAsCollaborator(
@@ -161,7 +161,7 @@ export async function updateNoteTitleAsCollaborator(
     .update(notes)
     .set({ title, lastUpdated })
     .where(eq(notes.id, noteId))
-    .returning();
+    .returning(noteColumns);
 }
 
 export async function getOrCreateInviteToken(noteId: string, userId: string) {

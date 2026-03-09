@@ -43,6 +43,8 @@ export default function NotePage() {
 
   const noteId = Array.isArray(id) ? id[0] : id;
 
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
+
   const [debouncedTitle] = useDebounce(title, 2000);
   const [debouncedContent] = useDebounce(noteContent, 2000);
 
@@ -82,29 +84,28 @@ export default function NotePage() {
         setError("Failed to load note");
       } finally {
         setIsLoading(false);
+        setInitialLoadDone(true);
       }
     }
 
     loadNote();
   }, [noteId]);
 
-  const handleTitleSave = useCallback(async () => {
-    if (!user?.id || !noteId || isSaving) return;
-    setIsSaving(true);
-    try {
-      await updateExistingNoteTitle(noteId, title);
-    } catch (err) {
-      console.error("Error saving title:", err);
-    } finally {
-      setIsSaving(false);
-    }
-  }, [user?.id, noteId, title, isSaving]);
-
   useEffect(() => {
-    if (!isLoading && debouncedTitle) {
-      handleTitleSave();
-    }
-  }, [debouncedTitle, isLoading, handleTitleSave]);
+    if (!initialLoadDone || !debouncedTitle || !noteId || !user?.id) return;
+    let cancelled = false;
+    (async () => {
+      setIsSaving(true);
+      try {
+        await updateExistingNoteTitle(noteId, debouncedTitle);
+      } catch (err) {
+        if (!cancelled) console.error("Error saving title:", err);
+      } finally {
+        if (!cancelled) setIsSaving(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [debouncedTitle, initialLoadDone, noteId, user?.id]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTitle(e.target.value);
@@ -115,12 +116,11 @@ export default function NotePage() {
   }, []);
 
   useEffect(() => {
-    if (!isLoading && debouncedContent && noteId && user?.id && !isConnected) {
-      updateExistingNote(noteId, title, debouncedContent).catch((err) =>
-        console.error("Error saving content:", err)
-      );
-    }
-  }, [debouncedContent, isLoading, noteId, user?.id, isConnected]);
+    if (!initialLoadDone || !debouncedContent || !noteId || !user?.id || isConnected) return;
+    updateExistingNote(noteId, title, debouncedContent).catch((err) =>
+      console.error("Error saving content:", err)
+    );
+  }, [debouncedContent, initialLoadDone, noteId, user?.id, isConnected]);
 
   const canEdit = isOwner || permission === "edit";
 
