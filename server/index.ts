@@ -80,8 +80,14 @@ const server = Server.configure({
 
           if (row.yjsState) {
             const raw = row.yjsState;
+            if (raw instanceof Uint8Array) {
+              return raw;
+            }
             if (raw instanceof ArrayBuffer) {
               return new Uint8Array(raw);
+            }
+            if (Buffer.isBuffer(raw)) {
+              return new Uint8Array(raw.buffer, raw.byteOffset, raw.byteLength);
             }
             return null;
           }
