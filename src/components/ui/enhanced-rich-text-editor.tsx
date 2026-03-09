@@ -600,9 +600,6 @@ export function RichTextEditor(props: RichTextEditorProps) {
             </span>
             <span>{editor.storage.characterCount?.words() || 0} words</span>
           </div>
-          <div className="flex gap-2 text-xs">
-            <span>Rich Text Editor • Auto-save enabled</span>
-          </div>
         </div>
       </div>
 
