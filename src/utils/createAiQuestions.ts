@@ -5,7 +5,7 @@ import { QuizQuestions } from "@/database/schema/quizQuestions";
 import { unstable_noStore as noStore } from "next/cache";
 
 const chat = new ChatOpenAI({
-  modelName: "gpt-4-turbo-preview",
+  modelName: "gpt-4o",
   temperature: 0.7,
   openAIApiKey: process.env.OPENAI_API_KEY,
   timeout: 10000,

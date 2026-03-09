@@ -190,3 +190,87 @@ export async function getNoteByInviteToken(token: string) {
     .where(eq(notes.inviteToken, token));
   return r[0] ?? null;
 }
+
+export async function getOrCreateQuizShareToken(
+  noteId: string,
+  userId: string
+) {
+  const r = await db
+    .select({ quizShareToken: notes.quizShareToken })
+    .from(notes)
+    .where(and(eq(notes.id, noteId), eq(notes.userId, userId)));
+
+  if (r.length === 0) return null;
+
+  if (r[0].quizShareToken) return r[0].quizShareToken;
+
+  const token = uuid();
+  await db
+    .update(notes)
+    .set({ quizShareToken: token })
+    .where(eq(notes.id, noteId));
+
+  return token;
+}
+
+export async function getOrCreateFlashcardShareToken(
+  noteId: string,
+  userId: string
+) {
+  const r = await db
+    .select({ flashcardShareToken: notes.flashcardShareToken })
+    .from(notes)
+    .where(and(eq(notes.id, noteId), eq(notes.userId, userId)));
+
+  if (r.length === 0) return null;
+
+  if (r[0].flashcardShareToken) return r[0].flashcardShareToken;
+
+  const token = uuid();
+  await db
+    .update(notes)
+    .set({ flashcardShareToken: token })
+    .where(eq(notes.id, noteId));
+
+  return token;
+}
+
+export async function getNoteByQuizShareToken(token: string) {
+  const r = await db
+    .select({ notes: noteColumns })
+    .from(notes)
+    .where(eq(notes.quizShareToken, token));
+  return r[0] ?? null;
+}
+
+export async function getNoteByFlashcardShareToken(token: string) {
+  const r = await db
+    .select({ notes: noteColumns })
+    .from(notes)
+    .where(eq(notes.flashcardShareToken, token));
+  return r[0] ?? null;
+}
+
+export async function canAccessQuiz(noteId: string, userId: string) {
+  const access = await getNoteWithAccess(noteId, userId);
+  if (access) return true;
+
+  const note = await db
+    .select({ quizShareToken: notes.quizShareToken })
+    .from(notes)
+    .where(eq(notes.id, noteId));
+
+  return note.length > 0 && note[0].quizShareToken !== null;
+}
+
+export async function canAccessFlashcards(noteId: string, userId: string) {
+  const access = await getNoteWithAccess(noteId, userId);
+  if (access) return true;
+
+  const note = await db
+    .select({ flashcardShareToken: notes.flashcardShareToken })
+    .from(notes)
+    .where(eq(notes.id, noteId));
+
+  return note.length > 0 && note[0].flashcardShareToken !== null;
+}

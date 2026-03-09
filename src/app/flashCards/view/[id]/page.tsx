@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { fetchFlashCardsAndNote } from "./actions";
-import { RotateCcw, Plus, Layers } from "lucide-react";
+import { fetchFlashCardsAndNote, getFlashcardShareLink, checkIsNoteOwner } from "./actions";
+import { RotateCcw, Plus, Layers, Share2, Check } from "lucide-react";
 import { motion } from "framer-motion";
 import {
   PageTransition,
@@ -44,6 +44,8 @@ export default function ViewFlashCardsPage() {
   const [flippedCards, setFlippedCards] = useState<{ [key: string]: boolean }>(
     {}
   );
+  const [isOwner, setIsOwner] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const loadFlashCards = async () => {
@@ -54,9 +56,13 @@ export default function ViewFlashCardsPage() {
           throw new Error("Note ID is undefined");
         }
 
-        const data = await fetchFlashCardsAndNote(noteId);
+        const [data, ownerStatus] = await Promise.all([
+          fetchFlashCardsAndNote(noteId),
+          checkIsNoteOwner(noteId),
+        ]);
         setFlashcards(data.flashcards);
         setNote(data.note);
+        setIsOwner(ownerStatus);
       } catch (error) {
         console.error("Error loading flashcards:", error);
       } finally {
@@ -66,6 +72,16 @@ export default function ViewFlashCardsPage() {
 
     loadFlashCards();
   }, [id]);
+
+  const handleShare = async () => {
+    const noteId = Array.isArray(id) ? id[0] : id;
+    if (!noteId) return;
+    const token = await getFlashcardShareLink(noteId);
+    const url = `${window.location.origin}/flashCards/share/${token}`;
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const toggleCard = (cardId: string) => {
     setFlippedCards((prev) => ({
@@ -114,6 +130,21 @@ export default function ViewFlashCardsPage() {
               </p>
             </div>
             <div className="flex gap-4">
+              {isOwner && (
+                <HoverScale>
+                  <Button
+                    variant="outline"
+                    onClick={handleShare}
+                  >
+                    {copied ? (
+                      <Check className="h-4 w-4 mr-2" />
+                    ) : (
+                      <Share2 className="h-4 w-4 mr-2" />
+                    )}
+                    {copied ? "Copied!" : "Share"}
+                  </Button>
+                </HoverScale>
+              )}
               <HoverScale>
                 <Button
                   variant="outline"

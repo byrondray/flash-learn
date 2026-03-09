@@ -15,8 +15,8 @@ import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { fetchQuizQuestions, saveTestScore } from "./actions";
-import { Loader2, ArrowRight, ArrowLeft, CheckCircle, XCircle } from "lucide-react";
+import { fetchQuizQuestions, saveTestScore, getQuizShareLink, checkIsNoteOwner } from "./actions";
+import { Loader2, ArrowRight, ArrowLeft, CheckCircle, XCircle, Share2, Check, Copy } from "lucide-react";
 import {
   PageTransition,
   SlideIn,
@@ -50,12 +50,19 @@ export default function TestPage() {
   const [isComplete, setIsComplete] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     async function loadQuestions() {
       try {
-        const fetchedQuestions = await fetchQuizQuestions(id);
+        const [fetchedQuestions, ownerStatus] = await Promise.all([
+          fetchQuizQuestions(id),
+          checkIsNoteOwner(id),
+        ]);
         setQuestions(fetchedQuestions);
+        setIsOwner(ownerStatus);
       } catch (error) {
         console.error("Error loading questions:", error);
       } finally {
@@ -64,6 +71,15 @@ export default function TestPage() {
     }
     loadQuestions();
   }, [id]);
+
+  const handleShare = async () => {
+    const token = await getQuizShareLink(id);
+    const url = `${window.location.origin}/quizQuestions/share/${token}`;
+    setShareUrl(url);
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const handleAnswer = (answer: string) => {
     setSelectedAnswers((prev) => ({ ...prev, [currentQuestion]: answer }));
@@ -241,18 +257,38 @@ export default function TestPage() {
       <div className="container mx-auto py-8">
         <div className="max-w-2xl mx-auto space-y-6">
           <FadeIn>
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{
-                width: `${(currentQuestion / questions.length) * 100}%`,
-              }}
-              transition={{ duration: 0.5 }}
-            >
-              <Progress
-                value={(currentQuestion / questions.length) * 100}
-                className="w-full"
-              />
-            </motion.div>
+            <div className="flex items-center justify-between">
+              <motion.div
+                className="flex-1"
+                initial={{ width: 0 }}
+                animate={{
+                  width: `${(currentQuestion / questions.length) * 100}%`,
+                }}
+                transition={{ duration: 0.5 }}
+              >
+                <Progress
+                  value={(currentQuestion / questions.length) * 100}
+                  className="w-full"
+                />
+              </motion.div>
+              {isOwner && (
+                <HoverScale>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="ml-4 shrink-0"
+                    onClick={handleShare}
+                  >
+                    {copied ? (
+                      <Check className="h-4 w-4 mr-2" />
+                    ) : (
+                      <Share2 className="h-4 w-4 mr-2" />
+                    )}
+                    {copied ? "Copied!" : "Share Quiz"}
+                  </Button>
+                </HoverScale>
+              )}
+            </div>
           </FadeIn>
 
           <AnimatePresence mode="wait">

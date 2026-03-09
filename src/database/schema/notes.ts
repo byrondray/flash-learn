@@ -14,6 +14,8 @@ export const notes = sqliteTable(
     lastUpdated: text("lastUpdated").default(sql`(current_timestamp)`),
     yjsState: blob("yjsState"),
     inviteToken: text("inviteToken").unique(),
+    quizShareToken: text("quizShareToken").unique(),
+    flashcardShareToken: text("flashcardShareToken").unique(),
   },
   (table) => ({
     userIdx: index("idx_notes_userId").on(table.userId),
