@@ -31,9 +31,11 @@ function LandingPage() {
         </div>
         <div className="flex items-center gap-3">
           <Button variant="ghost" asChild>
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
             <a href="/api/auth/login">Log in</a>
           </Button>
           <Button asChild>
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
             <a href="/api/auth/register">Sign up</a>
           </Button>
         </div>
@@ -54,12 +56,14 @@ function LandingPage() {
         </p>
         <div className="flex gap-4 mt-8">
           <Button size="lg" asChild>
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
             <a href="/api/auth/register">
               Get started free
               <ArrowRight className="ml-2 h-4 w-4" />
             </a>
           </Button>
           <Button size="lg" variant="outline" asChild>
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
             <a href="/api/auth/login">Log in</a>
           </Button>
         </div>
