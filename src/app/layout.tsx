@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "@/components/sidebar";
 import { checkAndStoreKindeUser } from "@/utils/checkAndStoreKindeUser";
+import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,19 +30,24 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   await checkAndStoreKindeUser();
+  const { isAuthenticated } = getKindeServerSession();
+  const isLoggedIn = await isAuthenticated();
+
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <div className="flex flex-col min-h-screen">
-          {/* Navbar with logo */}
-
-          <div className="flex flex-1">
-            <Sidebar className="hidden md:flex" />
-            <main className="flex-1 p-8">{children}</main>
+        {isLoggedIn ? (
+          <div className="flex flex-col min-h-screen">
+            <div className="flex flex-1">
+              <Sidebar className="hidden md:flex" />
+              <main className="flex-1 p-8">{children}</main>
+            </div>
           </div>
-        </div>
+        ) : (
+          <main>{children}</main>
+        )}
       </body>
     </html>
   );

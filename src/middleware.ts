@@ -5,10 +5,5 @@ export default function middleware(req: Request) {
 }
 
 export const config = {
-  matcher: [
-    "/",
-    "/notes/:path*",
-    "/flashCards/:path*",
-    "/quizQuestions/:path*",
-  ],
+  matcher: ["/notes/:path*", "/flashCards/:path*", "/quizQuestions/:path*"],
 };

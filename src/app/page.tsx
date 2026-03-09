@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getThreeMostRecentNotesForUser } from "@/services/note.service";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
-import { ArrowRight, BarChart, BookOpen, Brain, Plus } from "lucide-react";
+import { ArrowRight, BarChart, BookOpen, Brain, Plus, Sparkles, FileText, Zap } from "lucide-react";
 import Link from "next/link";
 import { formatTimeAgo } from "@/utils/formatTime";
 import { getMostRecentTestScoreForUser } from "@/services/testScores.service";
@@ -17,15 +17,107 @@ import {
   StaggerContainer,
   StaggerItem,
 } from "@/components/ui/motion";
+import Image from "next/image";
 
 export const dynamic = "force-dynamic";
+
+function LandingPage() {
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
+      <nav className="flex items-center justify-between px-6 py-4 max-w-6xl mx-auto">
+        <div className="flex items-center gap-2">
+          <Image src="/logo.png" alt="Flash Learn" width={48} height={48} className="h-12 w-auto" />
+          <span className="text-xl font-bold">Flash Learn</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" asChild>
+            <a href="/api/auth/login">Log in</a>
+          </Button>
+          <Button asChild>
+            <a href="/api/auth/register">Sign up</a>
+          </Button>
+        </div>
+      </nav>
+
+      <section className="flex flex-col items-center text-center px-6 pt-20 pb-16 max-w-4xl mx-auto">
+        <div className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm text-muted-foreground mb-6">
+          <Sparkles className="h-4 w-4" />
+          AI-powered study tools
+        </div>
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight">
+          Turn your notes into
+          <span className="block text-primary">flashcards &amp; quizzes</span>
+        </h1>
+        <p className="mt-6 text-lg text-muted-foreground max-w-2xl">
+          Write notes, and let AI instantly generate flashcards and quiz questions.
+          Study smarter, retain more, and track your progress — all in one place.
+        </p>
+        <div className="flex gap-4 mt-8">
+          <Button size="lg" asChild>
+            <a href="/api/auth/register">
+              Get started free
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </a>
+          </Button>
+          <Button size="lg" variant="outline" asChild>
+            <a href="/api/auth/login">Log in</a>
+          </Button>
+        </div>
+      </section>
+
+      <section className="px-6 pb-20 max-w-5xl mx-auto">
+        <div className="grid gap-6 md:grid-cols-3">
+          <Card className="bg-background/60 backdrop-blur">
+            <CardHeader>
+              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center mb-2">
+                <FileText className="h-5 w-5 text-primary" />
+              </div>
+              <CardTitle className="text-lg">Rich Note Taking</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
+              Write and organize your notes with a powerful rich-text editor. Collaborate with others in real time.
+            </CardContent>
+          </Card>
+
+          <Card className="bg-background/60 backdrop-blur">
+            <CardHeader>
+              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center mb-2">
+                <Zap className="h-5 w-5 text-primary" />
+              </div>
+              <CardTitle className="text-lg">AI Flashcards</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
+              Automatically generate flashcards from your notes with one click. Review and master concepts faster.
+            </CardContent>
+          </Card>
+
+          <Card className="bg-background/60 backdrop-blur">
+            <CardHeader>
+              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center mb-2">
+                <Brain className="h-5 w-5 text-primary" />
+              </div>
+              <CardTitle className="text-lg">Smart Quizzes</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
+              Test your knowledge with AI-generated quiz questions. Track scores and see your improvement over time.
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      <footer className="border-t py-8 text-center text-sm text-muted-foreground">
+        <p>&copy; {new Date().getFullYear()} Flash Learn. All rights reserved.</p>
+      </footer>
+    </div>
+  );
+}
 
 export default async function Home() {
   const { getUser } = getKindeServerSession();
   const user = await getUser();
 
   if (!user || !user.id) {
-    return <p className="text-center text-red-500">Error: User not found</p>;
+    return <LandingPage />;
   }
 
   const threeMostRecentNotes =
