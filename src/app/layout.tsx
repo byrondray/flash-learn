@@ -16,11 +16,55 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Flash Learn",
+  metadataBase: new URL("https://www.flashlearn.ca"),
+  title: {
+    default: "Flash Learn",
+    template: "%s | Flash Learn",
+  },
   description:
-    "Ai note taking app that will turn notes into flash cards and quiz questions",
+    "AI-powered note taking app that turns your notes into flash cards and quiz questions for smarter studying.",
+  applicationName: "Flash Learn",
+  keywords: [
+    "flash cards",
+    "quiz",
+    "AI notes",
+    "study tool",
+    "note taking",
+    "learning",
+    "education",
+  ],
+  authors: [{ name: "Flash Learn" }],
   icons: {
     icon: "/flash-learn-favicon.png",
+    apple: "/flash-learn-favicon.png",
+  },
+  openGraph: {
+    type: "website",
+    siteName: "Flash Learn",
+    title: "Flash Learn",
+    description:
+      "AI-powered note taking app that turns your notes into flash cards and quiz questions for smarter studying.",
+    url: "https://www.flashlearn.ca",
+    locale: "en_US",
+    images: [
+      {
+        url: "/api/og",
+        width: 1200,
+        height: 630,
+        alt: "Flash Learn – AI-Powered Study Tool",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Flash Learn",
+    description:
+      "AI-powered note taking app that turns your notes into flash cards and quiz questions for smarter studying.",
+    images: ["/api/og"],
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 

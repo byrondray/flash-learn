@@ -1,15 +1,19 @@
 import type { Metadata } from "next";
-import { getNoteByQuizShareToken } from "@/services/note.service";
+import { getNoteById } from "@/services/note.service";
 import { stripHtml } from "@/utils/stripHtml";
-import { QuizShareClient } from "./client";
 
 type Props = {
-  params: Promise<{ token: string }>;
+  params: Promise<{ id: string }>;
+  children: React.ReactNode;
 };
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { token } = await params;
-  const result = await getNoteByQuizShareToken(token);
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const result = await getNoteById(id);
 
   if (!result) {
     return { title: "Quiz" };
@@ -44,7 +48,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function QuizSharePage({ params }: Props) {
-  const { token } = await params;
-  return <QuizShareClient token={token} />;
+export default function QuizTestLayout({ children }: Props) {
+  return children;
 }

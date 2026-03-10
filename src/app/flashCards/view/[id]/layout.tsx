@@ -1,15 +1,19 @@
 import type { Metadata } from "next";
-import { getNoteByFlashcardShareToken } from "@/services/note.service";
+import { getNoteById } from "@/services/note.service";
 import { stripHtml } from "@/utils/stripHtml";
-import { FlashcardShareClient } from "./client";
 
 type Props = {
-  params: Promise<{ token: string }>;
+  params: Promise<{ id: string }>;
+  children: React.ReactNode;
 };
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { token } = await params;
-  const result = await getNoteByFlashcardShareToken(token);
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const result = await getNoteById(id);
 
   if (!result) {
     return { title: "Flash Cards" };
@@ -44,7 +48,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function FlashcardSharePage({ params }: Props) {
-  const { token } = await params;
-  return <FlashcardShareClient token={token} />;
+export default function FlashCardsViewLayout({ children }: Props) {
+  return children;
 }

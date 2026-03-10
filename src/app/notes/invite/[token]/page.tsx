@@ -1,58 +1,50 @@
-"use client";
+import type { Metadata } from "next";
+import { getNoteByInviteToken } from "@/services/note.service";
+import { stripHtml } from "@/utils/stripHtml";
+import { InviteClient } from "./client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { acceptInvite } from "./actions";
-import { Loader2 } from "lucide-react";
+type Props = {
+  params: Promise<{ token: string }>;
+};
 
-export default function InvitePage() {
-  const { token } = useParams();
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [error, setError] = useState<string | null>(null);
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { token } = await params;
+  const result = await getNoteByInviteToken(token);
 
-  useEffect(() => {
-    async function handleInvite() {
-      const inviteToken = Array.isArray(token) ? token[0] : token;
-      if (!inviteToken) {
-        setError("Invalid invite link");
-        return;
-      }
-
-      const permission = searchParams.get("permission") === "view" ? "view" as const : "edit" as const;
-      const result = await acceptInvite(inviteToken, permission);
-      if (result.success && result.noteId) {
-        router.replace(`/notes/${result.noteId}`);
-      } else {
-        setError(result.error ?? "Failed to join note");
-      }
-    }
-
-    handleInvite();
-  }, [token, router, searchParams]);
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center space-y-4">
-          <p className="text-red-500 text-lg font-medium">{error}</p>
-          <button
-            onClick={() => router.push("/")}
-            className="text-sm text-muted-foreground underline"
-          >
-            Go to Dashboard
-          </button>
-        </div>
-      </div>
-    );
+  if (!result) {
+    return { title: "Note Invite" };
   }
 
-  return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="text-center space-y-4">
-        <Loader2 className="h-8 w-8 animate-spin mx-auto" />
-        <p className="text-sm text-muted-foreground">Joining note...</p>
-      </div>
-    </div>
-  );
+  const title = result.notes.title || "Shared Note";
+  const description = result.notes.content
+    ? stripHtml(result.notes.content)
+    : "You've been invited to collaborate on a note in Flash Learn.";
+
+  return {
+    title: `Join "${title}"`,
+    description,
+    openGraph: {
+      title: `Join "${title}" – Shared Note`,
+      description,
+      images: [
+        {
+          url: `/api/og?title=${encodeURIComponent(title)}&type=note`,
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `Join "${title}" – Shared Note`,
+      description,
+      images: [`/api/og?title=${encodeURIComponent(title)}&type=note`],
+    },
+  };
+}
+
+export default async function InvitePage({ params }: Props) {
+  const { token } = await params;
+  return <InviteClient token={token} />;
 }
