@@ -217,41 +217,39 @@ export default function TestResultsPage() {
                       </TableHead>
                       <TableHead className="text-right">Action</TableHead>
                     </TableRow>
-                  </TableHeader>{" "}
+                  </TableHeader>
                   <TableBody>
                     {sortedScores.map((score) => (
-                      <StaggerItem key={score.testScores.id}>
-                        <TableRow>
-                          <TableCell className="font-medium">
-                            {score.notes.title}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              {Math.round(parseFloat(score.testScores.score))}%
-                              <Progress
-                                value={parseFloat(score.testScores.score)}
-                                className="w-20"
-                              />
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {formatTimeAgo(score.testScores.dateAttempted)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <HoverScale>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() =>
-                                  router.push(`/notes/${score.notes.id}`)
-                                }
-                              >
-                                View Note
-                              </Button>
-                            </HoverScale>
-                          </TableCell>
-                        </TableRow>
-                      </StaggerItem>
+                      <TableRow key={score.testScores.id}>
+                        <TableCell className="font-medium">
+                          {score.notes.title}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {Math.round(parseFloat(score.testScores.score))}%
+                            <Progress
+                              value={parseFloat(score.testScores.score)}
+                              className="w-20"
+                            />
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {formatTimeAgo(score.testScores.dateAttempted)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <HoverScale>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                router.push(`/notes/${score.notes.id}`)
+                              }
+                            >
+                              View Note
+                            </Button>
+                          </HoverScale>
+                        </TableCell>
+                      </TableRow>
                     ))}
                   </TableBody>
                 </Table>
@@ -263,7 +261,7 @@ export default function TestResultsPage() {
                     </div>
                   </FadeIn>
                 )}
-              </CardContent>{" "}
+              </CardContent>
             </Card>
           </FadeIn>
         </div>
