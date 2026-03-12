@@ -25,46 +25,28 @@ export function Sidebar({ className }: SidebarProps) {
   return (
     <>
       <Sheet>
-        {" "}
         <SheetTrigger asChild>
-          <HoverScale scale={1.1}>
-            <Button
-              variant="ghost"
-              className="md:hidden fixed left-4 top-4 z-40"
-              size="icon"
-            >
-              <motion.div
-                whileHover={{ rotate: 180 }}
-                transition={{ duration: 0.3 }}
-              >
-                <Menu className="h-4 w-4" />
-              </motion.div>
-            </Button>
-          </HoverScale>
+          <Button
+            variant="ghost"
+            className="md:hidden fixed left-4 top-4 z-40"
+            size="icon"
+          >
+            <Menu className="h-4 w-4" />
+          </Button>
         </SheetTrigger>
         <SheetContent side="left" className="w-[240px] p-4">
-          <motion.div
-            initial={{ x: -240, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -240, opacity: 0 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-          >
-            <SidebarContent />
-          </motion.div>
+          <SidebarContent />
         </SheetContent>
       </Sheet>
 
-      <motion.aside
+      <aside
         className={cn(
           "hidden md:block w-[240px] border-r bg-background",
           className
         )}
-        initial={{ x: -240, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.4, ease: "easeInOut", delay: 0.1 }}
       >
         <SidebarContent />
-      </motion.aside>
+      </aside>
     </>
   );
 }

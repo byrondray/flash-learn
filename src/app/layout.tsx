@@ -85,7 +85,7 @@ export default async function RootLayout({
         {isLoggedIn ? (
           <div className="flex flex-col min-h-screen">
             <div className="flex flex-1">
-              <Sidebar className="hidden md:flex" />
+              <Sidebar />
               <main className="flex-1 p-8">{children}</main>
             </div>
           </div>
