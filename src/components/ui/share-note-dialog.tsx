@@ -63,6 +63,13 @@ export function ShareNoteDialog(props: {
 
   const handleShare = async () => {
     if (!email.trim()) return;
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
     setIsSharing(true);
     setError(null);
     setSuccess(null);

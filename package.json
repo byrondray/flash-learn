@@ -67,7 +67,8 @@
     "use-debounce": "^10.0.4",
     "uuid": "^11.0.5",
     "ws": "^8.18.2",
-    "yjs": "^13.6.29"
+    "yjs": "^13.6.29",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
