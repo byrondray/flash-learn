@@ -1,7 +1,7 @@
 "use server";
 
 import { getNoteByInviteToken } from "@/services/note.service";
-import { addCollaborator } from "@/services/collaborator.service";
+import { addCollaboratorIfAbsent } from "@/services/collaborator.service";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 
 export async function acceptInvite(
@@ -19,6 +19,9 @@ export async function acceptInvite(
     return { success: true, noteId: note.notes.id };
   }
 
-  await addCollaborator(note.notes.id, user.id, permission);
+  // Only sets permission on first join; re-visiting the link (with a
+  // different ?permission= value) cannot change an existing collaborator's
+  // access level. Only the owner can change that, via updateCollaboratorPermission.
+  await addCollaboratorIfAbsent(note.notes.id, user.id, permission);
   return { success: true, noteId: note.notes.id };
 }

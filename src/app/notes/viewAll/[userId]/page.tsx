@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
-import { fetchUserNotes, fetchSharedNotes, deleteExistingNote } from "./actions";
+import { fetchUserNotes, fetchSharedNotes } from "./actions";
+import { deleteExistingNote } from "@/app/notes/[id]/actions";
 import {
   Card,
   CardContent,

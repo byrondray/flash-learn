@@ -40,6 +40,15 @@ export async function saveFlashCards(
   const parsed = saveFlashCardsSchema.safeParse({ noteId, flashcards });
   if (!parsed.success) throw new Error("Invalid input");
 
+  const { getUser } = getKindeServerSession();
+  const user = await getUser();
+  if (!user?.id) throw new Error("Unauthorized");
+
+  const note = await getNoteByIdForUser(parsed.data.noteId, user.id);
+  if (!note) {
+    throw new Error("Note not found");
+  }
+
   const savedCards = await Promise.all(
     parsed.data.flashcards.map((card) =>
       createFlashCard(parsed.data.noteId, card.question, card.answer)

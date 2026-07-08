@@ -5,6 +5,7 @@ import {
   updateNoteTitle,
   getNoteWithAccess,
   deleteNote,
+  updateNoteAsCollaborator,
   updateNoteTitleAsCollaborator,
   getOrCreateInviteToken,
 } from "@/services/note.service";
@@ -38,12 +39,28 @@ export async function updateExistingNote(
   const { getUser } = getKindeServerSession();
   const user = await getUser();
   if (!user?.id) throw new Error("Unauthorized");
-  return await updateNote(
-    parsed.data.noteId,
-    user.id,
-    parsed.data.title,
-    parsed.data.content
-  );
+
+  const access = await canAccessNote(parsed.data.noteId, user.id);
+  if (!access.canAccess) throw new Error("Unauthorized");
+
+  if (access.role === "owner") {
+    return await updateNote(
+      parsed.data.noteId,
+      user.id,
+      parsed.data.title,
+      parsed.data.content
+    );
+  }
+
+  if (access.role === "collaborator" && access.permission === "edit") {
+    return await updateNoteAsCollaborator(
+      parsed.data.noteId,
+      parsed.data.title,
+      parsed.data.content
+    );
+  }
+
+  throw new Error("Insufficient permissions");
 }
 
 export async function updateExistingNoteTitle(noteId: string, title: string) {

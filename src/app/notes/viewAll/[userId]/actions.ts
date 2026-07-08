@@ -1,9 +1,8 @@
 "use server";
 
-import { getNotesForUser, deleteNote } from "@/services/note.service";
+import { getNotesForUser } from "@/services/note.service";
 import { getSharedNotesForUser } from "@/services/collaborator.service";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
-import { revalidatePath } from "next/cache";
 
 export async function fetchUserNotes() {
   const { getUser } = getKindeServerSession();
@@ -35,12 +34,4 @@ export async function fetchSharedNotes() {
   const user = await getUser();
   if (!user?.id) throw new Error("Unauthorized");
   return await getSharedNotesForUser(user.id);
-}
-
-export async function deleteExistingNote(noteId: string) {
-  const { getUser } = getKindeServerSession();
-  const user = await getUser();
-  if (!user?.id) throw new Error("Unauthorized");
-  await deleteNote(noteId, user.id);
-  revalidatePath(`/notes/viewAll/${user.id}`);
 }

@@ -57,6 +57,15 @@ export async function saveQuizQuestions(
   const parsed = saveQuizQuestionsSchema.safeParse({ noteId, questions });
   if (!parsed.success) throw new Error("Invalid input");
 
+  const { getUser } = getKindeServerSession();
+  const user = await getUser();
+  if (!user?.id) throw new Error("Unauthorized");
+
+  const note = await getNoteByIdForUser(parsed.data.noteId, user.id);
+  if (!note) {
+    throw new Error("Note not found");
+  }
+
   const savedQuestions = await Promise.all(
     parsed.data.questions.map((question) =>
       createQuizQuestion(

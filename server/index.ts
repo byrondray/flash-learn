@@ -1,7 +1,7 @@
 import { Server } from "@hocuspocus/server";
 import { Database } from "@hocuspocus/extension-database";
 import { TiptapTransformer } from "@hocuspocus/transformer";
-import { generateHTML } from "@tiptap/core";
+import { generateHTML, generateJSON } from "@tiptap/core";
 import { createClient } from "@libsql/client";
 import * as Y from "yjs";
 import "dotenv/config";
@@ -62,11 +62,28 @@ const server = Server.configure({
   port: parseInt(process.env.PORT || "8080", 10),
 
   async onAuthenticate(data) {
-    const { token } = data;
+    const { token, documentName } = data;
     if (!token) {
       throw new Error("Authentication required");
     }
-    return { userId: token };
+
+    const ownerResult = await db.execute({
+      sql: "SELECT id FROM notes WHERE id = ? AND userId = ?",
+      args: [documentName, token],
+    });
+    if (ownerResult.rows.length > 0) {
+      return { userId: token };
+    }
+
+    const collaboratorResult = await db.execute({
+      sql: "SELECT userId FROM noteCollaborators WHERE noteId = ? AND userId = ?",
+      args: [documentName, token],
+    });
+    if (collaboratorResult.rows.length > 0) {
+      return { userId: token };
+    }
+
+    throw new Error("Access denied");
   },
 
   extensions: [
@@ -107,8 +124,9 @@ const server = Server.configure({
             : `<p>${htmlContent}</p>`;
 
           try {
+            const json = generateJSON(safeHtml, tiptapExtensions);
             const ydoc = TiptapTransformer.toYdoc(
-              safeHtml,
+              json,
               "default",
               tiptapExtensions
             );

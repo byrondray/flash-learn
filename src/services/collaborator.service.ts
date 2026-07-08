@@ -21,6 +21,20 @@ export async function addCollaborator(
     .returning();
 }
 
+export async function addCollaboratorIfAbsent(
+  noteId: string,
+  userId: string,
+  permission: "edit" | "view" = "edit"
+) {
+  return await db
+    .insert(noteCollaborators)
+    .values({ noteId, userId, permission })
+    .onConflictDoNothing({
+      target: [noteCollaborators.noteId, noteCollaborators.userId],
+    })
+    .returning();
+}
+
 export async function removeCollaborator(noteId: string, userId: string) {
   return await db
     .delete(noteCollaborators)

@@ -94,6 +94,14 @@ export async function deleteQuizQuestion(
     .where(eq(quizQuestions.id, quizQuestionId));
 }
 
+export async function getQuizQuestionById(quizQuestionId: string) {
+  const result = await db
+    .select()
+    .from(quizQuestions)
+    .where(eq(quizQuestions.id, quizQuestionId));
+  return result[0] ?? null;
+}
+
 export async function getQuizQuestionsForNoteId(noteId: string) {
   const questions = await db
     .select()

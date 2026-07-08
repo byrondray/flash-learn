@@ -1,6 +1,9 @@
 "use server";
 
-import { getQuizQuestionsForNoteId } from "@/services/questions.service";
+import {
+  getQuizQuestionsForNoteId,
+  getQuizQuestionById,
+} from "@/services/questions.service";
 import { createTestScore } from "@/services/testScores.service";
 import {
   canAccessQuiz,
@@ -31,6 +34,12 @@ export async function saveTestScore(quizQuestionId: string, score: number) {
   const { getUser } = getKindeServerSession();
   const user = await getUser();
   if (!user?.id) throw new Error("Unauthorized");
+
+  const quizQuestion = await getQuizQuestionById(parsed.data.quizQuestionId);
+  if (!quizQuestion) throw new Error("Quiz question not found");
+
+  const hasAccess = await canAccessQuiz(quizQuestion.noteId, user.id);
+  if (!hasAccess) throw new Error("Access denied");
 
   return await createTestScore(
     parsed.data.quizQuestionId,
