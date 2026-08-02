@@ -1,15 +1,23 @@
 "use server";
 
-import { getFlashCardsForNoteId } from "@/services/cards.service";
 import {
-  getNoteById,
+  getFlashCardsForNoteId,
+  updateFlashCard,
+  deleteFlashCard,
+} from "@/services/cards.service";
+import {
   getPublicNoteById,
   getNoteWithAccess,
   canAccessFlashcards,
   getOrCreateFlashcardShareToken,
 } from "@/services/note.service";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
-import { noteIdSchema, shareTokenSchema } from "@/lib/validations";
+import {
+  noteIdSchema,
+  parseOptionalShareToken,
+  updateFlashCardSchema,
+  deleteFlashCardSchema,
+} from "@/lib/validations";
 
 export async function fetchFlashCardsAndNote(
   noteId: string,
@@ -18,10 +26,7 @@ export async function fetchFlashCardsAndNote(
   const parsed = noteIdSchema.safeParse(noteId);
   if (!parsed.success) throw new Error("Invalid note ID");
 
-  const parsedToken = shareToken
-    ? shareTokenSchema.safeParse(shareToken)
-    : undefined;
-  if (shareToken && !parsedToken?.success) throw new Error("Invalid share link");
+  const parsedToken = parseOptionalShareToken(shareToken);
 
   const { getUser } = getKindeServerSession();
   const user = await getUser();
@@ -31,17 +36,24 @@ export async function fetchFlashCardsAndNote(
   const hasAccess = await canAccessFlashcards(
     parsed.data,
     user.id,
-    parsedToken?.data
+    parsedToken,
+    isOwnerOrCollaborator
   );
   if (!hasAccess) throw new Error("Note not found");
 
   // A share-token viewer (not the owner/a collaborator) only gets the note
   // title, never its content — the note body isn't part of what a
-  // flashcard share link is meant to expose.
-  const [note, flashcards] = await Promise.all([
-    isOwnerOrCollaborator ? getNoteById(parsed.data) : getPublicNoteById(parsed.data),
+  // flashcard share link is meant to expose. `isOwnerOrCollaborator` already
+  // holds the full row from `getNoteWithAccess` above, so the owner/
+  // collaborator path reuses it instead of re-fetching the same note.
+  const [publicNote, flashcards] = await Promise.all([
+    isOwnerOrCollaborator ? null : getPublicNoteById(parsed.data),
     getFlashCardsForNoteId(parsed.data),
   ]);
+
+  const note = isOwnerOrCollaborator
+    ? { notes: isOwnerOrCollaborator.notes }
+    : publicNote;
 
   if (!note) throw new Error("Note not found");
 
@@ -63,6 +75,44 @@ export async function getFlashcardShareLink(noteId: string) {
   if (!token) throw new Error("Only the note owner can share flashcards");
 
   return token;
+}
+
+export async function editFlashCard(
+  flashCardId: string,
+  question: string,
+  answer: string
+) {
+  const parsed = updateFlashCardSchema.safeParse({
+    flashCardId,
+    question,
+    answer,
+  });
+  if (!parsed.success) throw new Error("Invalid input");
+
+  const { getUser } = getKindeServerSession();
+  const user = await getUser();
+  if (!user?.id) throw new Error("Unauthorized");
+
+  const [updated] = await updateFlashCard(
+    parsed.data.flashCardId,
+    user.id,
+    parsed.data.question,
+    parsed.data.answer
+  );
+  if (!updated) throw new Error("Flashcard not found");
+
+  return updated;
+}
+
+export async function removeFlashCard(flashCardId: string) {
+  const parsed = deleteFlashCardSchema.safeParse({ flashCardId });
+  if (!parsed.success) throw new Error("Invalid input");
+
+  const { getUser } = getKindeServerSession();
+  const user = await getUser();
+  if (!user?.id) throw new Error("Unauthorized");
+
+  await deleteFlashCard(parsed.data.flashCardId, user.id);
 }
 
 export async function checkIsNoteOwner(noteId: string) {

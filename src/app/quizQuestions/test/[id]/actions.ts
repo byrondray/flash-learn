@@ -3,6 +3,8 @@
 import {
   getQuizQuestionsForNoteId,
   getQuizQuestionById,
+  updateQuizQuestion,
+  deleteQuizQuestion,
 } from "@/services/questions.service";
 import { createTestScore } from "@/services/testScores.service";
 import {
@@ -14,23 +16,22 @@ import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import {
   noteIdSchema,
   saveTestScoreSchema,
-  shareTokenSchema,
+  parseOptionalShareToken,
+  updateQuizQuestionSchema,
+  deleteQuizQuestionSchema,
 } from "@/lib/validations";
 
 export async function fetchQuizQuestions(noteId: string, shareToken?: string) {
   const parsed = noteIdSchema.safeParse(noteId);
   if (!parsed.success) throw new Error("Invalid note ID");
 
-  const parsedToken = shareToken
-    ? shareTokenSchema.safeParse(shareToken)
-    : undefined;
-  if (shareToken && !parsedToken?.success) throw new Error("Invalid share link");
+  const parsedToken = parseOptionalShareToken(shareToken);
 
   const { getUser } = getKindeServerSession();
   const user = await getUser();
   if (!user?.id) throw new Error("Unauthorized");
 
-  const hasAccess = await canAccessQuiz(parsed.data, user.id, parsedToken?.data);
+  const hasAccess = await canAccessQuiz(parsed.data, user.id, parsedToken);
   if (!hasAccess) throw new Error("Access denied");
 
   return await getQuizQuestionsForNoteId(parsed.data);
@@ -44,10 +45,7 @@ export async function saveTestScore(
   const parsed = saveTestScoreSchema.safeParse({ quizQuestionId, score });
   if (!parsed.success) throw new Error("Invalid input");
 
-  const parsedToken = shareToken
-    ? shareTokenSchema.safeParse(shareToken)
-    : undefined;
-  if (shareToken && !parsedToken?.success) throw new Error("Invalid share link");
+  const parsedToken = parseOptionalShareToken(shareToken);
 
   const { getUser } = getKindeServerSession();
   const user = await getUser();
@@ -59,7 +57,7 @@ export async function saveTestScore(
   const hasAccess = await canAccessQuiz(
     quizQuestion.noteId,
     user.id,
-    parsedToken?.data
+    parsedToken
   );
   if (!hasAccess) throw new Error("Access denied");
 
@@ -83,6 +81,50 @@ export async function getQuizShareLink(noteId: string) {
   if (!token) throw new Error("Only the note owner can share quizzes");
 
   return token;
+}
+
+export async function editQuizQuestion(
+  quizQuestionId: string,
+  question: string,
+  options: string[],
+  correctAnswer: string,
+  explanation: string
+) {
+  const parsed = updateQuizQuestionSchema.safeParse({
+    quizQuestionId,
+    question,
+    options,
+    correctAnswer,
+    explanation,
+  });
+  if (!parsed.success) throw new Error("Invalid input");
+
+  const { getUser } = getKindeServerSession();
+  const user = await getUser();
+  if (!user?.id) throw new Error("Unauthorized");
+
+  const updated = await updateQuizQuestion(
+    parsed.data.quizQuestionId,
+    user.id,
+    parsed.data.question,
+    parsed.data.options,
+    parsed.data.correctAnswer,
+    parsed.data.explanation
+  );
+  if (!updated) throw new Error("Quiz question not found");
+
+  return updated;
+}
+
+export async function removeQuizQuestion(quizQuestionId: string) {
+  const parsed = deleteQuizQuestionSchema.safeParse({ quizQuestionId });
+  if (!parsed.success) throw new Error("Invalid input");
+
+  const { getUser } = getKindeServerSession();
+  const user = await getUser();
+  if (!user?.id) throw new Error("Unauthorized");
+
+  await deleteQuizQuestion(parsed.data.quizQuestionId, user.id);
 }
 
 export async function checkIsNoteOwner(noteId: string) {

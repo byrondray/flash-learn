@@ -99,7 +99,9 @@ async function processChunkWithRetry<T>(
     const timeoutId = setTimeout(() => controller.abort(), 8000);
     try {
       const reducedChunk =
-        attempt === 1 ? chunk : chunk.slice(0, chunk.length / attempt);
+        attempt === 1
+          ? chunk
+          : chunk.slice(0, Math.max(100, Math.floor(chunk.length / attempt)));
       console.log(`Attempt ${attempt}, chunk length: ${reducedChunk.length}`);
 
       return await processor(reducedChunk, controller.signal);

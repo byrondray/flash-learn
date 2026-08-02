@@ -1,6 +1,6 @@
 "use server";
 
-import { getNoteByIdForUser } from "@/services/note.service";
+import { getNoteWithAccess, canEditNote } from "@/services/note.service";
 import {
   createQuizQuestion,
   getQuizQuestionsForNoteId,
@@ -37,15 +37,15 @@ export async function generateQuizQuestionsAction(
 
   noStore();
 
-  const note = await getNoteByIdForUser(parsed.data, user.id);
-  if (!note) {
+  const access = await getNoteWithAccess(parsed.data, user.id);
+  if (!canEditNote(access)) {
     throw new Error("Note not found");
   }
 
   const existingQuizQuestions = await getQuizQuestionsForNoteId(parsed.data);
   return await generateUniqueQuestions(
-    note.notes.title,
-    note.notes.content,
+    access.notes.title,
+    access.notes.content,
     existingQuizQuestions
   );
 }
@@ -61,8 +61,8 @@ export async function saveQuizQuestions(
   const user = await getUser();
   if (!user?.id) throw new Error("Unauthorized");
 
-  const note = await getNoteByIdForUser(parsed.data.noteId, user.id);
-  if (!note) {
+  const access = await getNoteWithAccess(parsed.data.noteId, user.id);
+  if (!canEditNote(access)) {
     throw new Error("Note not found");
   }
 

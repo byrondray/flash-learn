@@ -1,5 +1,4 @@
-import { Server, MessageType, IncomingMessage } from "@hocuspocus/server";
-import { messageYjsSyncStep1 } from "y-protocols/sync";
+import { Server } from "@hocuspocus/server";
 import { Database } from "@hocuspocus/extension-database";
 import { TiptapTransformer } from "@hocuspocus/transformer";
 import { generateHTML, generateJSON } from "@tiptap/core";
@@ -65,6 +64,40 @@ async function verifyAccessToken(token: string): Promise<string> {
   return payload.sub;
 }
 
+// Re-derives a user's current permission for a note directly from the DB —
+// used both at connect time and to periodically refresh an already-open
+// connection, since a collaborator's permission can be downgraded (or
+// revoked) by the owner while their WebSocket session is still open.
+async function lookupPermission(
+  documentName: string,
+  userId: string
+): Promise<"edit" | "view" | null> {
+  const ownerResult = await db.execute({
+    sql: "SELECT id FROM notes WHERE id = ? AND userId = ?",
+    args: [documentName, userId],
+  });
+  if (ownerResult.rows.length > 0) {
+    return "edit";
+  }
+
+  const collaboratorResult = await db.execute({
+    sql: "SELECT permission FROM noteCollaborators WHERE noteId = ? AND userId = ?",
+    args: [documentName, userId],
+  });
+  if (collaboratorResult.rows.length > 0) {
+    return collaboratorResult.rows[0].permission as "edit" | "view";
+  }
+
+  return null;
+}
+
+// Throttles the per-message permission re-check in `beforeHandleMessage` —
+// keyed by connection object identity (a WeakMap so entries for closed
+// connections are garbage-collected automatically, no manual cleanup
+// needed) so each open socket is checked on its own schedule.
+const PERMISSION_RECHECK_MS = 10_000;
+const permissionCheckedAt = new WeakMap<object, number>();
+
 const tiptapExtensions = [
   StarterKit.configure({
     bulletList: { keepMarks: true, keepAttributes: false },
@@ -89,7 +122,7 @@ const server = Server.configure({
   port: parseInt(process.env.PORT || "8080", 10),
 
   async onAuthenticate(data) {
-    const { token, documentName } = data;
+    const { token, documentName, connection } = data;
     if (!token) {
       throw new Error("Authentication required");
     }
@@ -99,57 +132,36 @@ const server = Server.configure({
     // any other user on this document.
     const userId = await verifyAccessToken(token);
 
-    const ownerResult = await db.execute({
-      sql: "SELECT id FROM notes WHERE id = ? AND userId = ?",
-      args: [documentName, userId],
-    });
-    if (ownerResult.rows.length > 0) {
-      return { userId, permission: "edit" as const };
+    const permission = await lookupPermission(documentName, userId);
+    if (!permission) {
+      throw new Error("Access denied");
     }
 
-    const collaboratorResult = await db.execute({
-      sql: "SELECT permission FROM noteCollaborators WHERE noteId = ? AND userId = ?",
-      args: [documentName, userId],
-    });
-    if (collaboratorResult.rows.length > 0) {
-      const permission = collaboratorResult.rows[0].permission as
-        | "edit"
-        | "view";
-      return { userId, permission };
-    }
+    // Setting `connection.readOnly` uses Hocuspocus's own native read-only
+    // gate (it rejects sync/update messages with a graceful ack instead of
+    // throwing, and never blocks SyncStep1, so the doc still loads) rather
+    // than hand-parsing the Yjs wire protocol to reimplement the same
+    // behavior less reliably.
+    connection.readOnly = permission === "view";
 
-    throw new Error("Access denied");
+    return { userId, permission };
   },
 
-  // `onAuthenticate`'s return value is merged into hook `context`, not into
-  // the connection's `readOnly` flag (this Hocuspocus version never reads a
-  // hook-provided `readOnly`), so view-only permission has to be enforced
-  // here by rejecting sync/update messages before they're applied to the
-  // Yjs doc. Awareness/auth/query messages are left alone so cursors and
-  // presence still work for view-only collaborators.
-  //
-  // MessageType.Sync (Hocuspocus's outer envelope) carries three distinct
-  // Yjs sync-protocol sub-messages, distinguished by a second varuint:
-  // SyncStep1 (client requesting the doc's current state — read, must be
-  // allowed or a view-only client can never load the document), SyncStep2,
-  // and Update (both writes). Blocking on the outer type alone blocks
-  // SyncStep1 too and breaks loading for view-only collaborators entirely.
-  // messageYjsSyncStep1 comes from `y-protocols/sync`, the public/versioned
-  // Yjs wire protocol Hocuspocus itself is built on — not an
-  // @hocuspocus/server internal — so this is stable API to depend on.
+  // `readOnly` above is only set once, at initial connect, and Hocuspocus
+  // has no hook that fires per-message before this one to refresh it. A
+  // collaborator's permission can be downgraded by the owner while their
+  // socket stays open, so re-derive it from the DB here and flip
+  // `connection.readOnly` live — throttled per-connection so this isn't a
+  // DB round trip on every keystroke.
   async beforeHandleMessage(data) {
-    const { context, update } = data;
-    if (context.permission === "view") {
-      const message = new IncomingMessage(update);
-      message.readVarString(); // documentName, unused here
-      const type = message.readVarUint();
-      if (type === MessageType.Sync) {
-        const subType = message.readVarUint();
-        if (subType !== messageYjsSyncStep1) {
-          throw new Error("Read-only: editing is not permitted");
-        }
-      }
-    }
+    const { context, connection, documentName } = data;
+    const now = Date.now();
+    const lastChecked = permissionCheckedAt.get(connection) ?? 0;
+    if (now - lastChecked < PERMISSION_RECHECK_MS) return;
+    permissionCheckedAt.set(connection, now);
+
+    const permission = await lookupPermission(documentName, context.userId);
+    connection.readOnly = permission !== "edit";
   },
 
   extensions: [
@@ -226,6 +238,14 @@ const server = Server.configure({
       async store(data) {
         const { documentName, state } = data;
 
+        // No permission re-check here: `onStoreDocumentPayload` only carries
+        // `context`, which is fixed at initial auth and doesn't reflect a
+        // permission downgrade applied mid-session — `connection.readOnly`
+        // (kept live by `beforeHandleMessage`'s periodic re-check) is the
+        // actual source of truth, and it's what stops a view-only
+        // connection's writes from ever reaching the Yjs doc in the first
+        // place, so nothing unauthorized should reach `store()` to begin
+        // with.
         try {
           const ydoc = new Y.Doc();
           Y.applyUpdate(ydoc, state);

@@ -15,8 +15,24 @@ import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { fetchQuizQuestions, saveTestScore, getQuizShareLink, checkIsNoteOwner } from "./actions";
-import { Loader2, ArrowRight, ArrowLeft, CheckCircle, XCircle, Share2, Check } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import {
+  fetchQuizQuestions,
+  saveTestScore,
+  getQuizShareLink,
+  checkIsNoteOwner,
+  editQuizQuestion,
+  removeQuizQuestion,
+} from "./actions";
+import { Loader2, ArrowRight, ArrowLeft, CheckCircle, XCircle, Share2, Check, Pencil, Trash2 } from "lucide-react";
 import {
   PageTransition,
   SlideIn,
@@ -54,6 +70,18 @@ export default function TestPage() {
   const [saving, setSaving] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [editState, setEditState] = useState<{
+    questionId: string;
+    question: string;
+    options: string[];
+    correctAnswer: string;
+    explanation: string;
+    saving: boolean;
+  } | null>(null);
+  const [deleteState, setDeleteState] = useState<{
+    questionId: string;
+    deleting: boolean;
+  } | null>(null);
 
   useEffect(() => {
     async function loadQuestions() {
@@ -110,6 +138,67 @@ export default function TestPage() {
       }
     });
     return (correct / questions.length) * 100;
+  };
+
+  const openEditDialog = (q: Question) => {
+    setEditState({
+      questionId: q.id,
+      question: q.question,
+      options: q.options.map((o) => o.optionText),
+      correctAnswer: q.correctAnswer,
+      explanation: q.explanation,
+      saving: false,
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editState) return;
+    const { questionId, question, options, correctAnswer, explanation } =
+      editState;
+    setEditState((prev) => (prev ? { ...prev, saving: true } : prev));
+    try {
+      await editQuizQuestion(
+        questionId,
+        question,
+        options,
+        correctAnswer,
+        explanation
+      );
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.id === questionId
+            ? {
+                ...q,
+                question,
+                correctAnswer,
+                explanation,
+                options: q.options.map((o, i) => ({
+                  ...o,
+                  optionText: options[i],
+                })),
+              }
+            : q
+        )
+      );
+      setEditState(null);
+    } catch (error) {
+      console.error("Error updating quiz question:", error);
+      setEditState((prev) => (prev ? { ...prev, saving: false } : prev));
+    }
+  };
+
+  const handleDeleteQuestion = async () => {
+    if (!deleteState) return;
+    const { questionId } = deleteState;
+    setDeleteState((prev) => (prev ? { ...prev, deleting: true } : prev));
+    try {
+      await removeQuizQuestion(questionId);
+      setQuestions((prev) => prev.filter((q) => q.id !== questionId));
+      setDeleteState(null);
+    } catch (error) {
+      console.error("Error deleting quiz question:", error);
+      setDeleteState((prev) => (prev ? { ...prev, deleting: false } : prev));
+    }
   };
 
   const handleFinish = async () => {
@@ -218,6 +307,31 @@ export default function TestPage() {
                           <span className="line-clamp-1 flex-1">
                             Q{idx + 1}: {q.question}
                           </span>
+                          {isOwner && (
+                            <span className="flex items-center gap-1 shrink-0">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={() => openEditDialog(q)}
+                              >
+                                <Pencil className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={() =>
+                                  setDeleteState({
+                                    questionId: q.id,
+                                    deleting: false,
+                                  })
+                                }
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </span>
+                          )}
                         </motion.div>
                       );
                     })}
@@ -247,6 +361,119 @@ export default function TestPage() {
             </ScaleIn>
           </FadeIn>
         </div>
+
+        <Dialog
+          open={!!editState}
+          onOpenChange={(open) => !open && setEditState(null)}
+        >
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Question</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Question</label>
+                <Textarea
+                  value={editState?.question ?? ""}
+                  onChange={(e) =>
+                    setEditState((prev) =>
+                      prev ? { ...prev, question: e.target.value } : prev
+                    )
+                  }
+                  rows={2}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Options</label>
+                {(editState?.options ?? []).map((opt, i) => (
+                  <Input
+                    key={i}
+                    value={opt}
+                    onChange={(e) =>
+                      setEditState((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              options: prev.options.map((o, idx) =>
+                                idx === i ? e.target.value : o
+                              ),
+                            }
+                          : prev
+                      )
+                    }
+                  />
+                ))}
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Correct Answer</label>
+                <Input
+                  value={editState?.correctAnswer ?? ""}
+                  onChange={(e) =>
+                    setEditState((prev) =>
+                      prev ? { ...prev, correctAnswer: e.target.value } : prev
+                    )
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Explanation</label>
+                <Textarea
+                  value={editState?.explanation ?? ""}
+                  onChange={(e) =>
+                    setEditState((prev) =>
+                      prev ? { ...prev, explanation: e.target.value } : prev
+                    )
+                  }
+                  rows={3}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditState(null)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveEdit}
+                disabled={
+                  !editState ||
+                  editState.saving ||
+                  !editState.question.trim() ||
+                  !editState.correctAnswer.trim() ||
+                  editState.options.some((o) => !o.trim())
+                }
+              >
+                {editState?.saving ? "Saving..." : "Save"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog
+          open={!!deleteState}
+          onOpenChange={(open) => !open && setDeleteState(null)}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Question</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to delete this quiz question? This cannot
+              be undone.
+            </p>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteState(null)}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteQuestion}
+                disabled={!!deleteState?.deleting}
+              >
+                {deleteState?.deleting ? "Deleting..." : "Delete"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </PageTransition>
     );
   }

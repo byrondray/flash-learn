@@ -1,7 +1,7 @@
 "use server";
 
 import { createFlashCard } from "@/services/cards.service";
-import { getNoteByIdForUser } from "@/services/note.service";
+import { getNoteWithAccess, canEditNote } from "@/services/note.service";
 import { generateFlashcards } from "@/utils/createAiQuestions";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { unstable_noStore as noStore } from "next/cache";
@@ -25,12 +25,12 @@ export async function generateFlashcardsAction(noteId: string) {
 
   noStore();
 
-  const note = await getNoteByIdForUser(parsed.data, user.id);
-  if (!note) {
+  const access = await getNoteWithAccess(parsed.data, user.id);
+  if (!canEditNote(access)) {
     throw new Error("Note not found");
   }
 
-  return await generateFlashcards(note.notes.title, note.notes.content);
+  return await generateFlashcards(access.notes.title, access.notes.content);
 }
 
 export async function saveFlashCards(
@@ -44,8 +44,8 @@ export async function saveFlashCards(
   const user = await getUser();
   if (!user?.id) throw new Error("Unauthorized");
 
-  const note = await getNoteByIdForUser(parsed.data.noteId, user.id);
-  if (!note) {
+  const access = await getNoteWithAccess(parsed.data.noteId, user.id);
+  if (!canEditNote(access)) {
     throw new Error("Note not found");
   }
 

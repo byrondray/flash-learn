@@ -118,14 +118,6 @@ export async function getNotesForUserEditedThisWeek(userId: string) {
     .orderBy(desc(notes.lastUpdated));
 }
 
-export async function getNoteByIdForUser(noteId: string, userId: string) {
-  const r = await db
-    .select({ notes: noteColumns })
-    .from(notes)
-    .where(and(eq(notes.id, noteId), eq(notes.userId, userId)));
-  return r[0] ?? null;
-}
-
 export async function getNoteWithAccess(noteId: string, userId: string) {
   const owned = await db
     .select({ notes: noteColumns })
@@ -156,6 +148,18 @@ export async function getNoteWithAccess(noteId: string, userId: string) {
   }
 
   return null;
+}
+
+// Owners always have edit access; a collaborator needs the `edit` permission
+// specifically (a `view`-permission collaborator can read but not mutate).
+// Centralizes this check so it isn't inlined separately at every action
+// that lets a collaborator create/save content (flashcards, quiz
+// questions) — a future permission tier only needs updating here.
+export function canEditNote(
+  access: Awaited<ReturnType<typeof getNoteWithAccess>>
+): access is NonNullable<typeof access> {
+  if (!access) return false;
+  return access.role === "owner" || access.permission === "edit";
 }
 
 // Both functions take `userId` and re-check for an `edit`-permission
@@ -228,24 +232,37 @@ export async function getOrCreateInviteToken(
   userId: string,
   permission: "edit" | "view" = "edit"
 ) {
-  const r = await db
-    .select({ inviteToken: notes.inviteToken })
-    .from(notes)
-    .where(and(eq(notes.id, noteId), eq(notes.userId, userId)));
+  return await db.transaction(async (tx) => {
+    const r = await tx
+      .select({ inviteToken: notes.inviteToken })
+      .from(notes)
+      .where(and(eq(notes.id, noteId), eq(notes.userId, userId)));
 
-  if (r.length === 0) return null;
+    if (r.length === 0) return null;
 
-  if (r[0].inviteToken) {
-    return r[0].inviteToken;
-  }
+    if (r[0].inviteToken) {
+      return r[0].inviteToken;
+    }
 
-  const token = uuid();
-  await db
-    .update(notes)
-    .set({ inviteToken: token, invitePermission: permission })
-    .where(eq(notes.id, noteId));
+    const token = uuid();
+    // Guard the UPDATE on `inviteToken IS NULL` so a concurrent transaction
+    // that already created a token wins instead of being overwritten.
+    const updated = await tx
+      .update(notes)
+      .set({ inviteToken: token, invitePermission: permission })
+      .where(and(eq(notes.id, noteId), sql`${notes.inviteToken} IS NULL`))
+      .returning({ inviteToken: notes.inviteToken });
 
-  return token;
+    if (updated.length === 0) {
+      const existing = await tx
+        .select({ inviteToken: notes.inviteToken })
+        .from(notes)
+        .where(eq(notes.id, noteId));
+      return existing[0]?.inviteToken ?? null;
+    }
+
+    return updated[0].inviteToken;
+  });
 }
 
 // Fetches the invite token together with its *current* permission, without
@@ -297,48 +314,72 @@ export async function getNoteByInviteToken(token: string) {
   return r[0] ?? null;
 }
 
+// Shared by `getOrCreateQuizShareToken`/`getOrCreateFlashcardShareToken` —
+// both are "select existing token scoped by owner, else generate one under
+// an IS-NULL race guard" against a different single-column share-token
+// field on `notes`. Parameterized on that column so the race-guard logic
+// (the part most worth getting right exactly once) isn't duplicated.
+// `columnKey` is the table's TS property name (what `.set()` expects) —
+// kept separate from `column` (the SQL column reference `sql`/`.select()`
+// need) since Drizzle's `Column.name` is the raw SQL name, which isn't
+// guaranteed to match the property key.
+async function getOrCreateSingleColumnShareToken(
+  noteId: string,
+  userId: string,
+  column: typeof notes.quizShareToken | typeof notes.flashcardShareToken,
+  columnKey: "quizShareToken" | "flashcardShareToken"
+) {
+  return await db.transaction(async (tx) => {
+    const r = await tx
+      .select({ token: column })
+      .from(notes)
+      .where(and(eq(notes.id, noteId), eq(notes.userId, userId)));
+
+    if (r.length === 0) return null;
+
+    if (r[0].token) return r[0].token;
+
+    const token = uuid();
+    const updated = await tx
+      .update(notes)
+      .set({ [columnKey]: token })
+      .where(and(eq(notes.id, noteId), sql`${column} IS NULL`))
+      .returning({ token: column });
+
+    if (updated.length === 0) {
+      const existing = await tx
+        .select({ token: column })
+        .from(notes)
+        .where(eq(notes.id, noteId));
+      return existing[0]?.token ?? null;
+    }
+
+    return updated[0].token;
+  });
+}
+
 export async function getOrCreateQuizShareToken(
   noteId: string,
   userId: string
 ) {
-  const r = await db
-    .select({ quizShareToken: notes.quizShareToken })
-    .from(notes)
-    .where(and(eq(notes.id, noteId), eq(notes.userId, userId)));
-
-  if (r.length === 0) return null;
-
-  if (r[0].quizShareToken) return r[0].quizShareToken;
-
-  const token = uuid();
-  await db
-    .update(notes)
-    .set({ quizShareToken: token })
-    .where(eq(notes.id, noteId));
-
-  return token;
+  return getOrCreateSingleColumnShareToken(
+    noteId,
+    userId,
+    notes.quizShareToken,
+    "quizShareToken"
+  );
 }
 
 export async function getOrCreateFlashcardShareToken(
   noteId: string,
   userId: string
 ) {
-  const r = await db
-    .select({ flashcardShareToken: notes.flashcardShareToken })
-    .from(notes)
-    .where(and(eq(notes.id, noteId), eq(notes.userId, userId)));
-
-  if (r.length === 0) return null;
-
-  if (r[0].flashcardShareToken) return r[0].flashcardShareToken;
-
-  const token = uuid();
-  await db
-    .update(notes)
-    .set({ flashcardShareToken: token })
-    .where(eq(notes.id, noteId));
-
-  return token;
+  return getOrCreateSingleColumnShareToken(
+    noteId,
+    userId,
+    notes.flashcardShareToken,
+    "flashcardShareToken"
+  );
 }
 
 export async function getNoteByQuizShareToken(token: string) {
@@ -357,50 +398,61 @@ export async function getNoteByFlashcardShareToken(token: string) {
   return r[0] ?? null;
 }
 
-// `shareToken`, when provided, must match the note's own share token —
-// otherwise any authenticated user could pass `canAccessQuiz(noteId, userId)`
-// for a note they have no relationship to, as soon as its owner shared it
-// with anyone at all (the share token's actual value was never checked).
-export async function canAccessQuiz(
+// Shared by `canAccessQuiz`/`canAccessFlashcards` — both are "owner/
+// collaborator always has access; otherwise the caller's `shareToken` must
+// match the note's own share token" against a different single-column
+// share-token field. `shareToken` must match exactly (not just be
+// non-null), otherwise any authenticated user could pass this check for a
+// note they have no relationship to, as soon as its owner shared it with
+// anyone at all. `knownAccess`, when provided, is a `getNoteWithAccess`
+// result the caller already fetched — skips re-running that query here.
+async function canAccessViaShareToken(
   noteId: string,
   userId: string,
-  shareToken?: string
+  column: typeof notes.quizShareToken | typeof notes.flashcardShareToken,
+  shareToken?: string,
+  knownAccess?: Awaited<ReturnType<typeof getNoteWithAccess>>
 ) {
-  const access = await getNoteWithAccess(noteId, userId);
+  const access =
+    knownAccess !== undefined ? knownAccess : await getNoteWithAccess(noteId, userId);
   if (access) return true;
 
   if (!shareToken) return false;
 
   const note = await db
-    .select({ quizShareToken: notes.quizShareToken })
+    .select({ token: column })
     .from(notes)
     .where(eq(notes.id, noteId));
 
-  return (
-    note.length > 0 &&
-    note[0].quizShareToken !== null &&
-    note[0].quizShareToken === shareToken
+  return note.length > 0 && note[0].token !== null && note[0].token === shareToken;
+}
+
+export async function canAccessQuiz(
+  noteId: string,
+  userId: string,
+  shareToken?: string,
+  knownAccess?: Awaited<ReturnType<typeof getNoteWithAccess>>
+) {
+  return canAccessViaShareToken(
+    noteId,
+    userId,
+    notes.quizShareToken,
+    shareToken,
+    knownAccess
   );
 }
 
 export async function canAccessFlashcards(
   noteId: string,
   userId: string,
-  shareToken?: string
+  shareToken?: string,
+  knownAccess?: Awaited<ReturnType<typeof getNoteWithAccess>>
 ) {
-  const access = await getNoteWithAccess(noteId, userId);
-  if (access) return true;
-
-  if (!shareToken) return false;
-
-  const note = await db
-    .select({ flashcardShareToken: notes.flashcardShareToken })
-    .from(notes)
-    .where(eq(notes.id, noteId));
-
-  return (
-    note.length > 0 &&
-    note[0].flashcardShareToken !== null &&
-    note[0].flashcardShareToken === shareToken
+  return canAccessViaShareToken(
+    noteId,
+    userId,
+    notes.flashcardShareToken,
+    shareToken,
+    knownAccess
   );
 }

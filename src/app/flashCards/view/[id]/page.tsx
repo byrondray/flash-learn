@@ -4,8 +4,22 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { fetchFlashCardsAndNote, getFlashcardShareLink, checkIsNoteOwner } from "./actions";
-import { RotateCcw, Plus, Layers, Share2, Check } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  fetchFlashCardsAndNote,
+  getFlashcardShareLink,
+  checkIsNoteOwner,
+  editFlashCard,
+  removeFlashCard,
+} from "./actions";
+import { RotateCcw, Plus, Layers, Share2, Check, Pencil, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
 import {
   PageTransition,
@@ -48,6 +62,16 @@ export default function ViewFlashCardsPage() {
   );
   const [isOwner, setIsOwner] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [editState, setEditState] = useState<{
+    cardId: string;
+    question: string;
+    answer: string;
+    saving: boolean;
+  } | null>(null);
+  const [deleteState, setDeleteState] = useState<{
+    cardId: string;
+    deleting: boolean;
+  } | null>(null);
 
   useEffect(() => {
     const loadFlashCards = async () => {
@@ -90,6 +114,49 @@ export default function ViewFlashCardsPage() {
       ...prev,
       [cardId]: !prev[cardId],
     }));
+  };
+
+  const openEditDialog = (card: FlashCard) => {
+    setEditState({
+      cardId: card.flashCards.id,
+      question: card.flashCards.question,
+      answer: card.flashCards.answer,
+      saving: false,
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editState) return;
+    const { cardId, question, answer } = editState;
+    setEditState((prev) => (prev ? { ...prev, saving: true } : prev));
+    try {
+      await editFlashCard(cardId, question, answer);
+      setFlashcards((prev) =>
+        prev.map((c) =>
+          c.flashCards.id === cardId
+            ? { flashCards: { ...c.flashCards, question, answer } }
+            : c
+        )
+      );
+      setEditState(null);
+    } catch (error) {
+      console.error("Error updating flashcard:", error);
+      setEditState((prev) => (prev ? { ...prev, saving: false } : prev));
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteState) return;
+    const { cardId } = deleteState;
+    setDeleteState((prev) => (prev ? { ...prev, deleting: true } : prev));
+    try {
+      await removeFlashCard(cardId);
+      setFlashcards((prev) => prev.filter((c) => c.flashCards.id !== cardId));
+      setDeleteState(null);
+    } catch (error) {
+      console.error("Error deleting flashcard:", error);
+      setDeleteState((prev) => (prev ? { ...prev, deleting: false } : prev));
+    }
   };
 
   if (isLoading) {
@@ -179,22 +246,53 @@ export default function ViewFlashCardsPage() {
                   >
                     {" "}
                     <CardHeader>
-                      <CardTitle className="text-sm font-medium flex items-center gap-2">
-                        <motion.div
-                          animate={{
-                            rotate: flippedCards[card.flashCards.id] ? 180 : 0,
-                          }}
-                          transition={{
-                            duration: 0.6,
-                            ease: "easeInOut",
-                            type: "tween",
-                          }}
-                        >
-                          <RotateCcw className="h-4 w-4" />
-                        </motion.div>
-                        {flippedCards[card.flashCards.id]
-                          ? "Answer"
-                          : "Question"}
+                      <CardTitle className="text-sm font-medium flex items-center justify-between gap-2">
+                        <span className="flex items-center gap-2">
+                          <motion.div
+                            animate={{
+                              rotate: flippedCards[card.flashCards.id] ? 180 : 0,
+                            }}
+                            transition={{
+                              duration: 0.6,
+                              ease: "easeInOut",
+                              type: "tween",
+                            }}
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                          </motion.div>
+                          {flippedCards[card.flashCards.id]
+                            ? "Answer"
+                            : "Question"}
+                        </span>
+                        {isOwner && (
+                          <span className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openEditDialog(card);
+                              }}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteState({
+                                  cardId: card.flashCards.id,
+                                  deleting: false,
+                                });
+                              }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </span>
+                        )}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -234,6 +332,86 @@ export default function ViewFlashCardsPage() {
             </HoverScale>
           </div>
         </FadeIn>
+
+        <Dialog
+          open={!!editState}
+          onOpenChange={(open) => !open && setEditState(null)}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Flashcard</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Question</label>
+                <Textarea
+                  value={editState?.question ?? ""}
+                  onChange={(e) =>
+                    setEditState((prev) =>
+                      prev ? { ...prev, question: e.target.value } : prev
+                    )
+                  }
+                  rows={3}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Answer</label>
+                <Textarea
+                  value={editState?.answer ?? ""}
+                  onChange={(e) =>
+                    setEditState((prev) =>
+                      prev ? { ...prev, answer: e.target.value } : prev
+                    )
+                  }
+                  rows={4}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditState(null)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveEdit}
+                disabled={
+                  !editState ||
+                  editState.saving ||
+                  !editState.question.trim() ||
+                  !editState.answer.trim()
+                }
+              >
+                {editState?.saving ? "Saving..." : "Save"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog
+          open={!!deleteState}
+          onOpenChange={(open) => !open && setDeleteState(null)}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Flashcard</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to delete this flashcard? This cannot be
+              undone.
+            </p>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteState(null)}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={!!deleteState?.deleting}
+              >
+                {deleteState?.deleting ? "Deleting..." : "Delete"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </PageTransition>
   );
