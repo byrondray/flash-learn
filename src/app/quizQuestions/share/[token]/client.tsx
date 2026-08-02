@@ -13,7 +13,9 @@ export function QuizShareClient(props: { token: string }) {
     async function resolve() {
       const result = await resolveQuizShareToken(props.token);
       if (result.success) {
-        router.replace(`/quizQuestions/test/${result.noteId}`);
+        router.replace(
+          `/quizQuestions/test/${result.noteId}?shareToken=${props.token}`
+        );
       } else {
         setError(result.error);
       }

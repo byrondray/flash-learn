@@ -8,6 +8,8 @@ import {
   updateNoteAsCollaborator,
   updateNoteTitleAsCollaborator,
   getOrCreateInviteToken,
+  getInviteTokenInfo,
+  setInviteTokenPermission,
 } from "@/services/note.service";
 import {
   addCollaborator,
@@ -26,6 +28,7 @@ import {
   shareNoteSchema,
   collaboratorActionSchema,
   updateCollaboratorSchema,
+  permissionSchema,
 } from "@/lib/validations";
 
 export async function updateExistingNote(
@@ -55,6 +58,7 @@ export async function updateExistingNote(
   if (access.role === "collaborator" && access.permission === "edit") {
     return await updateNoteAsCollaborator(
       parsed.data.noteId,
+      user.id,
       parsed.data.title,
       parsed.data.content
     );
@@ -85,6 +89,7 @@ export async function updateExistingNoteTitle(noteId: string, title: string) {
   if (access.role === "collaborator" && access.permission === "edit") {
     return await updateNoteTitleAsCollaborator(
       parsed.data.noteId,
+      user.id,
       parsed.data.title
     );
   }
@@ -212,6 +217,10 @@ export async function fetchNoteCollaborators(noteId: string) {
   return await getCollaboratorsForNote(parsed.data);
 }
 
+// Read-only: fetches (creating if absent) the invite token and reports its
+// *current* stored permission. Does not change the permission of an
+// already-existing link — merely opening the share dialog to view/copy a
+// link must not silently upgrade what it grants.
 export async function getInviteLink(noteId: string) {
   const parsed = noteIdSchema.safeParse(noteId);
   if (!parsed.success) throw new Error("Invalid note ID");
@@ -224,8 +233,43 @@ export async function getInviteLink(noteId: string) {
   if (!ownerCheck)
     throw new Error("Only the note owner can generate invite links");
 
-  const token = await getOrCreateInviteToken(parsed.data, user.id);
+  const existing = await getInviteTokenInfo(parsed.data, user.id);
+  if (existing?.inviteToken) {
+    return { token: existing.inviteToken, permission: existing.invitePermission };
+  }
+
+  const token = await getOrCreateInviteToken(parsed.data, user.id, "edit");
   if (!token) throw new Error("Failed to generate invite link");
+
+  return { token, permission: "edit" as const };
+}
+
+// The only path that changes an existing invite link's permission —
+// called when the owner explicitly picks a different value in the share
+// dialog, not on every dialog open/fetch.
+export async function setInviteLinkPermission(
+  noteId: string,
+  permission: "edit" | "view"
+) {
+  const parsed = noteIdSchema.safeParse(noteId);
+  if (!parsed.success) throw new Error("Invalid note ID");
+  const parsedPermission = permissionSchema.safeParse(permission);
+  if (!parsedPermission.success) throw new Error("Invalid permission");
+
+  const { getUser } = getKindeServerSession();
+  const user = await getUser();
+  if (!user?.id) throw new Error("Unauthorized");
+
+  const ownerCheck = await isNoteOwner(parsed.data, user.id);
+  if (!ownerCheck)
+    throw new Error("Only the note owner can manage sharing");
+
+  const token = await setInviteTokenPermission(
+    parsed.data,
+    user.id,
+    parsedPermission.data
+  );
+  if (!token) throw new Error("Generate an invite link first");
 
   return token;
 }

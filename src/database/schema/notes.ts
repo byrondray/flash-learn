@@ -14,6 +14,9 @@ export const notes = sqliteTable(
     lastUpdated: text("lastUpdated").default(sql`(current_timestamp)`),
     yjsState: blob("yjsState"),
     inviteToken: text("inviteToken").unique(),
+    invitePermission: text("invitePermission", { enum: ["edit", "view"] })
+      .notNull()
+      .default("edit"),
     quizShareToken: text("quizShareToken").unique(),
     flashcardShareToken: text("flashcardShareToken").unique(),
   },

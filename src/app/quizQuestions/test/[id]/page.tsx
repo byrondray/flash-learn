@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -40,6 +40,8 @@ interface Question {
 
 export default function TestPage() {
   const { id } = useParams() as { id: string };
+  const searchParams = useSearchParams();
+  const shareToken = searchParams.get("shareToken") ?? undefined;
   const router = useRouter();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -57,7 +59,7 @@ export default function TestPage() {
     async function loadQuestions() {
       try {
         const [fetchedQuestions, ownerStatus] = await Promise.all([
-          fetchQuizQuestions(id),
+          fetchQuizQuestions(id, shareToken),
           checkIsNoteOwner(id),
         ]);
         setQuestions(fetchedQuestions);
@@ -69,7 +71,7 @@ export default function TestPage() {
       }
     }
     loadQuestions();
-  }, [id]);
+  }, [id, shareToken]);
 
   const handleShare = async () => {
     const token = await getQuizShareLink(id);
@@ -114,7 +116,7 @@ export default function TestPage() {
     setSaving(true);
     try {
       const score = calculateScore();
-      await saveTestScore(questions[0].id, score);
+      await saveTestScore(questions[0].id, score, shareToken);
       router.push(`/notes/${id}`);
     } catch (error) {
       console.error("Error saving test score:", error);

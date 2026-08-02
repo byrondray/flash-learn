@@ -31,6 +31,7 @@ export function useCollaboration(props: {
   userId: string | undefined;
   userName: string | undefined;
   collabUrl: string;
+  accessToken: string | undefined | null;
 }) {
   const [isConnected, setIsConnected] = useState(false);
   const [isSynced, setIsSynced] = useState(false);
@@ -57,13 +58,18 @@ export function useCollaboration(props: {
   }, [props.userId]);
 
   useEffect(() => {
-    if (!props.noteId || !props.userId) return;
+    if (!props.noteId || !props.userId || !props.accessToken) return;
 
     const newProvider = new HocuspocusProvider({
       url: props.collabUrl,
       name: props.noteId,
       document: ydoc,
-      token: props.userId,
+      // A verified Kinde access token, not the raw user ID — the server
+      // verifies this against Kinde's JWKS in onAuthenticate. Sending the
+      // bare user ID here would let anyone who knows another user's ID
+      // impersonate them, since IDs aren't secret (they appear in URLs,
+      // collaborator lists, and awareness payloads).
+      token: props.accessToken,
       onConnect: () => setIsConnected(true),
       onDisconnect: () => setIsConnected(false),
       onSynced: () => setIsSynced(true),
@@ -92,7 +98,14 @@ export function useCollaboration(props: {
       providerRef.current = null;
       setProvider(null);
     };
-  }, [props.noteId, props.userId, props.userName, props.collabUrl, userColor]);
+  }, [
+    props.noteId,
+    props.userId,
+    props.userName,
+    props.collabUrl,
+    props.accessToken,
+    userColor,
+  ]);
 
   return {
     ydoc,

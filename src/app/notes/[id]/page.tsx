@@ -30,7 +30,7 @@ import {
 export default function NotePage() {
   const { id } = useParams();
   const router = useRouter();
-  const { user } = useKindeBrowserClient();
+  const { user, accessTokenRaw } = useKindeBrowserClient();
   const [title, setTitle] = useState("");
   const [noteContent, setNoteContent] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -58,6 +58,7 @@ export default function NotePage() {
       userId: user?.id,
       userName: user?.given_name || user?.email || undefined,
       collabUrl,
+      accessToken: accessTokenRaw,
     });
 
   useEffect(() => {
@@ -92,14 +93,20 @@ export default function NotePage() {
     loadNote();
   }, [noteId]);
 
+  const canEdit = isOwner || permission === "edit";
+
   useEffect(() => {
-    if (!initialLoadDone || !debouncedTitle || !noteId || !user?.id) return;
+    // View-only collaborators' clients would otherwise fire this on every
+    // debounce and hit "Insufficient permissions" from the server on every
+    // keystroke-adjacent tick (the title isn't editable in the UI for them,
+    // but the effect wasn't checking that itself).
+    if (!initialLoadDone || !debouncedTitle || !noteId || !user?.id || !canEdit) return;
     let cancelled = false;
     updateExistingNoteTitle(noteId, debouncedTitle).catch((err) => {
       if (!cancelled) console.error("Error saving title:", err);
     });
     return () => { cancelled = true; };
-  }, [debouncedTitle, initialLoadDone, noteId, user?.id]);
+  }, [debouncedTitle, initialLoadDone, noteId, user?.id, canEdit]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTitle(e.target.value);
@@ -110,13 +117,16 @@ export default function NotePage() {
   }, []);
 
   useEffect(() => {
-    if (!initialLoadDone || !debouncedContent || !noteId || !user?.id || isConnected) return;
+    // Skip while the Yjs/Hocuspocus connection is live (it owns
+    // persistence then) and skip entirely for view-only collaborators, who
+    // have nothing to save and would otherwise race a stale local HTML
+    // snapshot against the collaboration server's own store() on
+    // reconnect/disconnect.
+    if (!initialLoadDone || !debouncedContent || !noteId || !user?.id || !canEdit || isConnected) return;
     updateExistingNote(noteId, titleRef.current, debouncedContent).catch((err) =>
       console.error("Error saving content:", err)
     );
-  }, [debouncedContent, initialLoadDone, noteId, user?.id, isConnected]);
-
-  const canEdit = isOwner || permission === "edit";
+  }, [debouncedContent, initialLoadDone, noteId, user?.id, canEdit, isConnected]);
 
   const handleDelete = async () => {
     if (!noteId) return;

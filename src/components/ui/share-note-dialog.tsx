@@ -23,6 +23,7 @@ import {
   removeNoteCollaborator,
   fetchNoteCollaborators,
   getInviteLink,
+  setInviteLinkPermission,
   updateCollaboratorPermission,
 } from "@/app/notes/[id]/actions";
 
@@ -48,11 +49,15 @@ export function ShareNoteDialog(props: {
     setCollaborators(collabs);
   }, [props.noteId]);
 
+  // Read-only: reflects whatever the link's permission already is in the
+  // DB. Does not write anything, so reopening the dialog to copy a link
+  // can't silently change what that link grants.
   const loadInviteLink = useCallback(async () => {
-    const token = await getInviteLink(props.noteId);
+    const { token, permission } = await getInviteLink(props.noteId);
     const origin = window.location.origin;
-    setInviteUrl(`${origin}/notes/invite/${token}?permission=${linkPermission}`);
-  }, [props.noteId, linkPermission]);
+    setInviteUrl(`${origin}/notes/invite/${token}`);
+    setLinkPermission(permission);
+  }, [props.noteId]);
 
   useEffect(() => {
     if (open) {
@@ -60,6 +65,13 @@ export function ShareNoteDialog(props: {
       loadInviteLink();
     }
   }, [open, loadCollaborators, loadInviteLink]);
+
+  // Only fires when the owner actively picks a different permission in the
+  // dropdown — the one path allowed to change an existing link's grant.
+  const handleLinkPermissionChange = async (v: "edit" | "view") => {
+    setLinkPermission(v);
+    await setInviteLinkPermission(props.noteId, v);
+  };
 
   const handleShare = async () => {
     if (!email.trim()) return;
@@ -154,7 +166,7 @@ export function ShareNoteDialog(props: {
                 value={inviteUrl}
                 className="text-sm text-muted-foreground flex-1"
               />
-              <Select value={linkPermission} onValueChange={(v: "edit" | "view") => setLinkPermission(v)}>
+              <Select value={linkPermission} onValueChange={handleLinkPermissionChange}>
                 <SelectTrigger className="w-[100px]">
                   <SelectValue />
                 </SelectTrigger>

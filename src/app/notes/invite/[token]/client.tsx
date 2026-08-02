@@ -1,22 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { acceptInvite } from "./actions";
 import { Loader2 } from "lucide-react";
 
 export function InviteClient(props: { token: string }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function handleInvite() {
-      const permission =
-        searchParams.get("permission") === "view"
-          ? ("view" as const)
-          : ("edit" as const);
-      const result = await acceptInvite(props.token, permission);
+      // The invite's permission is decided server-side (by whatever the
+      // owner set when generating the link), not by the client.
+      const result = await acceptInvite(props.token);
       if (result.success && result.noteId) {
         router.replace(`/notes/${result.noteId}`);
       } else {
@@ -25,7 +22,7 @@ export function InviteClient(props: { token: string }) {
     }
 
     handleInvite();
-  }, [props.token, router, searchParams]);
+  }, [props.token, router]);
 
   if (error) {
     return (

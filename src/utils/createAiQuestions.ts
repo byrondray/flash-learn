@@ -3,13 +3,19 @@ import { PromptTemplate } from "@langchain/core/prompts";
 import { JsonOutputParser } from "@langchain/core/output_parsers";
 import { QuizQuestions } from "@/database/schema/quizQuestions";
 import { unstable_noStore as noStore } from "next/cache";
+import { z } from "zod";
 
+// `timeout`/`maxRetries` here used to be dead configuration: every call
+// site also wrapped its invocation in an 8s `Promise.race`, and a race
+// always resolves before this client's own 10s timeout or 3 internal
+// retries could kick in. Retries are owned entirely by
+// processChunkWithRetry below (so the two don't fight over how a slow
+// response is handled), so maxRetries is 0 here.
 const chat = new ChatOpenAI({
   modelName: "gpt-4o",
   temperature: 0.7,
   openAIApiKey: process.env.OPENAI_API_KEY,
-  timeout: 10000,
-  maxRetries: 3,
+  maxRetries: 0,
   streaming: false,
 });
 
@@ -53,28 +59,56 @@ interface GeneratedQuestion {
   explanation: string;
 }
 
+// Validates the LLM's JSON output before it's trusted. Without this, a
+// malformed or incomplete model response (missing keys, wrong types) would
+// either throw an unhelpful TypeError deep in the accumulation logic below,
+// or silently pass through and corrupt what gets shown to the user — both
+// indistinguishable from a genuine network/timeout failure in the logs.
+const flashcardResponseSchema = z.object({
+  flashcards: z.array(
+    z.object({
+      front: z.string().min(1),
+      back: z.string().min(1),
+    })
+  ),
+});
+
+const quizResponseSchema = z.object({
+  questions: z.array(
+    z.object({
+      question: z.string().min(1),
+      options: z.array(z.string().min(1)).min(2),
+      correctAnswer: z.string().min(1),
+      explanation: z.string().min(1),
+    })
+  ),
+});
+
 // Changed to use a generic type T instead of 'any'
 async function processChunkWithRetry<T>(
   chunk: string,
-  processor: (chunk: string) => Promise<T>,
+  processor: (chunk: string, signal: AbortSignal) => Promise<T>,
   maxRetries: number = 3
 ): Promise<T> {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    // Actually cancels the in-flight OpenAI request when the timeout
+    // fires, instead of the previous Promise.race, which let the losing
+    // request keep running (and billing) in the background after the race
+    // rejected.
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
     try {
       const reducedChunk =
         attempt === 1 ? chunk : chunk.slice(0, chunk.length / attempt);
       console.log(`Attempt ${attempt}, chunk length: ${reducedChunk.length}`);
 
-      return await Promise.race([
-        processor(reducedChunk),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("Processing timeout")), 8000)
-        ),
-      ]);
+      return await processor(reducedChunk, controller.signal);
     } catch (error) {
       console.error(`Attempt ${attempt} failed:`, error);
       if (attempt === maxRetries) throw error;
       await new Promise((resolve) => setTimeout(resolve, 200 * attempt));
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
   throw new Error("Failed to process chunk after all retries");
@@ -136,12 +170,17 @@ Example format:
         "numCards",
       ]);
 
-      const processor = (chunkContent: string) =>
-        chain.invoke({
-          title: sanitizeContent(title),
-          content: sanitizeContent(chunkContent),
-          numCards,
-        });
+      const processor = async (chunkContent: string, signal: AbortSignal) => {
+        const raw = await chain.invoke(
+          {
+            title: sanitizeContent(title),
+            content: sanitizeContent(chunkContent),
+            numCards,
+          },
+          { signal }
+        );
+        return flashcardResponseSchema.parse(raw);
+      };
 
       const result = await processChunkWithRetry(chunk, processor);
 
@@ -216,12 +255,17 @@ Example format:
         "numQuestions",
       ]);
 
-      const processor = (chunkContent: string) =>
-        chain.invoke({
-          title: sanitizeContent(title),
-          content: sanitizeContent(chunkContent),
-          numQuestions,
-        });
+      const processor = async (chunkContent: string, signal: AbortSignal) => {
+        const raw = await chain.invoke(
+          {
+            title: sanitizeContent(title),
+            content: sanitizeContent(chunkContent),
+            numQuestions,
+          },
+          { signal }
+        );
+        return quizResponseSchema.parse(raw);
+      };
 
       const result = await processChunkWithRetry(chunk, processor);
 
@@ -306,13 +350,18 @@ Example format:
         "existingQuestions",
       ]);
 
-      const processor = (chunkContent: string) =>
-        chain.invoke({
-          title: sanitizeContent(title),
-          content: sanitizeContent(chunkContent),
-          existingQuestions: existingQuestionsText,
-          numQuestions,
-        });
+      const processor = async (chunkContent: string, signal: AbortSignal) => {
+        const raw = await chain.invoke(
+          {
+            title: sanitizeContent(title),
+            content: sanitizeContent(chunkContent),
+            existingQuestions: existingQuestionsText,
+            numQuestions,
+          },
+          { signal }
+        );
+        return quizResponseSchema.parse(raw);
+      };
 
       const result = await processChunkWithRetry(chunk, processor);
 

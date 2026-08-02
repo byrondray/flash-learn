@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { fetchFlashCardsAndNote, getFlashcardShareLink, checkIsNoteOwner } from "./actions";
@@ -37,6 +37,8 @@ interface Note {
 
 export default function ViewFlashCardsPage() {
   const { id } = useParams();
+  const searchParams = useSearchParams();
+  const shareToken = searchParams.get("shareToken") ?? undefined;
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [flashcards, setFlashcards] = useState<FlashCard[]>([]);
@@ -57,7 +59,7 @@ export default function ViewFlashCardsPage() {
         }
 
         const [data, ownerStatus] = await Promise.all([
-          fetchFlashCardsAndNote(noteId),
+          fetchFlashCardsAndNote(noteId, shareToken),
           checkIsNoteOwner(noteId),
         ]);
         setFlashcards(data.flashcards);
@@ -71,7 +73,7 @@ export default function ViewFlashCardsPage() {
     };
 
     loadFlashCards();
-  }, [id]);
+  }, [id, shareToken]);
 
   const handleShare = async () => {
     const noteId = Array.isArray(id) ? id[0] : id;

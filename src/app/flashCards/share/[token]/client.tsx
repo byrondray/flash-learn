@@ -13,7 +13,9 @@ export function FlashcardShareClient(props: { token: string }) {
     async function resolve() {
       const result = await resolveFlashcardShareToken(props.token);
       if (result.success) {
-        router.replace(`/flashCards/view/${result.noteId}`);
+        router.replace(
+          `/flashCards/view/${result.noteId}?shareToken=${props.token}`
+        );
       } else {
         setError(result.error);
       }
