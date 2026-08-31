@@ -5,10 +5,12 @@ import { eq } from "drizzle-orm";
 
 const db = getDB();
 
-const { getUser } = getKindeServerSession();
-
 export const checkAndStoreKindeUser = async () => {
   try {
+    // Resolved per request, not at module scope: getKindeServerSession() reads
+    // request cookies, so a module-level binding is evaluated outside any
+    // request and can resolve against the wrong (or no) session.
+    const { getUser } = getKindeServerSession();
     const user = await getUser();
 
     if (!user) {

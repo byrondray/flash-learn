@@ -74,8 +74,14 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   await checkAndStoreKindeUser();
-  const { isAuthenticated } = getKindeServerSession();
-  const isLoggedIn = await isAuthenticated();
+
+  // Must use the same signal as the pages themselves (getUser), not
+  // isAuthenticated(). isAuthenticated() validates the access token while
+  // getUser() reads the session user, so an expired access token makes them
+  // disagree — the page renders the signed-in dashboard while this layout
+  // renders the logged-out shell, dropping the sidebar and the padding.
+  const { getUser } = getKindeServerSession();
+  const isLoggedIn = Boolean(await getUser());
 
   return (
     <html lang="en">
