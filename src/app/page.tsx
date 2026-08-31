@@ -4,6 +4,7 @@ import { getThreeMostRecentNotesForUser } from "@/services/note.service";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { ArrowRight, BarChart, BookOpen, Brain, Plus, Sparkles, FileText, Zap } from "lucide-react";
 import Link from "next/link";
+import { LegalFooter } from "@/components/legal-footer";
 import { formatTimeAgo } from "@/utils/formatTime";
 import { getMostRecentTestScoreForUser } from "@/services/testScores.service";
 import { getFlashCardsForUser } from "@/services/cards.service";
@@ -109,9 +110,7 @@ function LandingPage() {
         </div>
       </section>
 
-      <footer className="border-t py-8 text-center text-sm text-muted-foreground">
-        <p>&copy; {new Date().getFullYear()} Flash Learn. All rights reserved.</p>
-      </footer>
+      <LegalFooter />
     </div>
   );
 }
@@ -322,6 +321,8 @@ export default async function Home() {
             </StaggerContainer>
           </div>
         </FadeIn>
+
+        <LegalFooter />
       </div>
     </PageTransition>
   );
