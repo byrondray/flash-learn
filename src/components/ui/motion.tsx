@@ -8,10 +8,17 @@ function useMotionSafe() {
   return !prefersReduced;
 }
 
-export function PageTransition({ children }: { children: ReactNode }) {
+export function PageTransition({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   const animate = useMotionSafe();
   return (
     <motion.div
+      className={className}
       initial={animate ? { opacity: 0, y: 20 } : false}
       animate={{ opacity: 1, y: 0 }}
       exit={animate ? { opacity: 0, y: -20 } : undefined}

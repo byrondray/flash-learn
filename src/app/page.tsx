@@ -24,7 +24,7 @@ export const dynamic = "force-dynamic";
 
 function LandingPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
+    <div className="flex min-h-screen flex-col bg-gradient-to-b from-background to-secondary/20">
       <nav className="flex items-center justify-between px-6 py-4 max-w-6xl mx-auto">
         <div className="flex items-center gap-2">
           <Image src="/logo.png" alt="Flash Learn" width={48} height={48} className="h-12 w-auto" />
@@ -143,8 +143,9 @@ export default async function Home() {
   const totalNotesEditedThisWeek = notesEditedThisWeek.length;
 
   return (
-    <PageTransition>
-      <div className="space-y-8">
+    <PageTransition className="flex flex-1 flex-col">
+      <div className="flex flex-1 flex-col">
+        <div className="flex-1 space-y-8">
         <SlideIn direction="down">
           <div className="flex justify-between items-center">
             <div>
@@ -321,8 +322,9 @@ export default async function Home() {
             </StaggerContainer>
           </div>
         </FadeIn>
+        </div>
 
-        <LegalFooter />
+        <LegalFooter className="mt-8" />
       </div>
     </PageTransition>
   );

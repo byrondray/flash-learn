@@ -92,7 +92,7 @@ export default async function RootLayout({
           <div className="flex flex-col min-h-screen">
             <div className="flex flex-1">
               <Sidebar />
-              <main className="flex-1 p-8">{children}</main>
+              <main className="flex flex-1 flex-col p-8">{children}</main>
             </div>
           </div>
         ) : (
